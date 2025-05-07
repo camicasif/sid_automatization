@@ -1,0 +1,7 @@
+
+# Ignorar archivos específicos (por si acaso)
+.idea/
+*.xlsm
+*.xlsx
+*.pptx
+Resultados22/
