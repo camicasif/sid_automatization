@@ -201,7 +201,7 @@ def procesar_excels():
     lista_sectores = ['a', 'b', 'c']
     lista_antenas = [1, 2, 3, 4]
 
-    for excel_path in glob.glob("*.xlsm"):
+    for excel_path in glob.glob("*.xls*"):
         try:
             print(f"\nProcesando: {excel_path}")
 
@@ -223,8 +223,8 @@ def procesar_excels():
             print(f"Error procesando {excel_path}: {str(e)}")
 
 if __name__ == "__main__":
-    #procesar_excels()
-    generar_presentacion()
+    procesar_excels()
+    #generar_presentacion()
     print("\nProceso completado. Estructura generada en 'Resultados/'")
 
 
