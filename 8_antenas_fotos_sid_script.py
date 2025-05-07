@@ -11,7 +11,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_PARAGRAPH_ALIGNMENT
 import copy
-file_name = 'Resultados22'
+file_name = 'Resultados'
 OFFSET_BUSQUEDA = 12  # Ajusta según necesidad
 
 def generar_presentacion():
@@ -19,9 +19,8 @@ def generar_presentacion():
     prs = Presentation("Plantilla.pptx")
 
     # Recorrer carpetas principales
-    base_path = 'Resultados22'
-    for carpeta in os.listdir(base_path):
-        carpeta_path = os.path.join(base_path, carpeta)
+    for carpeta in os.listdir(file_name):
+        carpeta_path = os.path.join(file_name, carpeta)
         if not os.path.isdir(carpeta_path):
             continue
 
@@ -85,7 +84,7 @@ def obtener_tecnologias(nombre_archivo):
         return tech_part.replace('-', ' + ')
     return ""
 
-def buscar_imagenes_por_combinaciones(excel_path, lista_sectores, lista_antenas, output_folder):
+def buscar_antenas_por_sectores(excel_path, lista_sectores, lista_antenas, output_folder):
     wb = load_workbook(excel_path, data_only=True)
     sheet = wb.worksheets[7]
 
@@ -201,7 +200,7 @@ def procesar_excels():
     lista_sectores = ['a', 'b', 'c']
     lista_antenas = [1, 2, 3, 4]
 
-    for excel_path in glob.glob("*.xls*"):
+    for excel_path in glob.glob(os.path.join("TSS", "*.xls*")):
         try:
             print(f"\nProcesando: {excel_path}")
 
@@ -216,7 +215,7 @@ def procesar_excels():
             shutil.rmtree(output_folder, ignore_errors=True)
             os.makedirs(output_folder, exist_ok=True)
 
-            buscar_imagenes_por_combinaciones(excel_path, lista_sectores, lista_antenas, output_folder)
+            buscar_antenas_por_sectores(excel_path, lista_sectores, lista_antenas, output_folder)
             print(f"Imágenes guardadas en: {output_folder}")
 
         except Exception as e:
@@ -224,7 +223,7 @@ def procesar_excels():
 
 if __name__ == "__main__":
     procesar_excels()
-    #generar_presentacion()
+    generar_presentacion()
     print("\nProceso completado. Estructura generada en 'Resultados/'")
 
 
