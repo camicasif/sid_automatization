@@ -1,0 +1,28 @@
+{
+  "celdas_tss": {
+    "id": "H7",
+    "name": "H8",
+    "texto_busqueda": "1.2.14",
+    "foto_ubicacion": "J55",
+    "rango_llaves": "A84:AM98"
+  },
+  "celdas_sid": {
+    "codigo_portada": "A45",
+    "foto_ubicacion": "D49",
+    "llaves_datos": "A481",
+    "observaciones_generales": "A502"
+  },
+  "hojas_tss": {
+    "informacion": 0,
+    "energia": 1,
+    "cabinas": 2,
+    "torres": 7,
+    "puesta_tierra": 8
+
+  },
+  "hojas_sid": {
+    "portada": 4,
+    "ubicacion_sitio": 5,
+    "datos_generales": 6
+  }
+}

@@ -5,3 +5,10 @@
 5. Colocar 12 imagenes de ingreso del sitio (preguntar si esta bien las 12 o si prefiere que las
 imagenes se copien y se ordenen con descripcion abajo ) Al lado una foto de la torre y dos fotos del lugar
     5.1 identificar de donde se saca las fotos del lugar
+
+    J55
+
+
+
+intenta el metodo que ya tenes y aislalo en otro script
+para ver si no esta mezclando el excel con
