@@ -123,17 +123,16 @@ class TSSProcessor:
     def capturar_rango_como_imagen(self, rango=None):
         """Capturar rango de Excel como imagen"""
         rango = rango or self.config.tss_range
-        excel = win32.gencache.EnsureDispatch('Excel.Application')
-
+        excel = None
         try:
-            excel.Visible = True  # Necesario para operaciones de clipboard
-            wb = excel.Workbooks.Open(
-                r'C:\Users\VICTUS\PycharmProjects\sid_automatization\TSS_PRUEBA\TSS_MIGUILLAS_rev.0_29.04.2025.xlsm')
-            sheet = wb.Sheets(1)  # Primera hoja
+            excel = win32.gencache.EnsureDispatch('Excel.Application')
+            excel.Visible = True
+            wb = excel.Workbooks.Open(os.path.abspath(self.tss_path))
+            sheet = wb.Sheets(1)
 
             print(f"📷 Capturando rango {rango} como imagen...")
             sheet.Range(rango).CopyPicture(Appearance=1, Format=2)
-            time.sleep(1)  # Esperar para operación de copiado
+            time.sleep(2)  # Aumentar tiempo de espera
 
             return self._capture_clipboard_image()
 
@@ -141,26 +140,83 @@ class TSSProcessor:
             print(f"❌ Error al capturar rango: {e}")
             return None
         finally:
-            excel.Quit()
+            try:
+                if excel:
+                    # Intenta cerrar de manera más segura
+                    excel.DisplayAlerts = False
+                    excel.Quit()
+                    time.sleep(1)  # Esperar para que termine el proceso
+            except Exception as e:
+                print(f"⚠️ Advertencia al cerrar Excel: {e}")
 
-    def _capture_clipboard_image(self):
-        """Capturar imagen del portapapeles y guardar en temporal"""
+    def capturar_multiples_rangos(self, rangos):
+        """Captura múltiples rangos como imágenes en una sola sesión de Excel"""
+        excel = None
+        imagenes = {}
         try:
-            img = ImageGrab.grabclipboard()
-            if not img:
-                print("⚠️ No se encontró imagen en el portapapeles")
-                return None
+            excel = win32.gencache.EnsureDispatch('Excel.Application')
+            excel.Visible = True
+            excel.DisplayAlerts = False  # Deshabilitar diálogos
+            wb = excel.Workbooks.Open(os.path.abspath(self.tss_path))
+            sheet = wb.Sheets(1)
 
-            temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-            temp_path = temp_file.name
-            img.save(temp_path)
-            temp_file.close()
+            # Esperar a que Excel esté listo
+            time.sleep(2)
 
-            print(f"✅ Imagen temporal guardada en: {temp_path}")
-            return temp_path
+            for nombre_rango, rango_celdas in rangos.items():
+                try:
+                    print(f"📷 Capturando rango {rango_celdas} como imagen ({nombre_rango})...")
+                    sheet.Range(rango_celdas).CopyPicture(Appearance=1, Format=2)
+                    time.sleep(2)  # Mayor tiempo de espera
+
+                    # Intentar hasta 3 veces si falla
+                    for _ in range(3):
+                        temp_path = self._capture_clipboard_image()
+                        if temp_path:
+                            imagenes[nombre_rango] = temp_path
+                            break
+                        time.sleep(1)
+                    else:
+                        print(f"⚠️ No se pudo capturar el rango {nombre_rango}")
+
+                except Exception as e:
+                    print(f"⚠️ Error al capturar {nombre_rango}: {str(e)}")
+                    continue
+
+            return imagenes
 
         except Exception as e:
-            print(f"❌ Error al capturar imagen: {e}")
+            print(f"❌ Error crítico al capturar rangos: {str(e)}")
+            return {}
+        finally:
+            try:
+                if excel:
+                    excel.DisplayAlerts = False
+                    excel.Quit()
+                    time.sleep(1)
+            except:
+                pass  # Ignorar errores al cerrar
+
+    def _capture_clipboard_image(self):
+        """Versión mejorada de captura de imágenes"""
+        try:
+            # Intentar varias veces por si el portapapeles no está listo
+            for _ in range(3):
+                try:
+                    img = ImageGrab.grabclipboard()
+                    if img:
+                        temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                        temp_path = temp_file.name
+                        img.save(temp_path, format='PNG')
+                        temp_file.close()
+                        print(f"✅ Imagen temporal guardada en: {temp_path}")
+                        return temp_path
+                except Exception as e:
+                    print(f"⚠️ Intento fallido: {str(e)}")
+                time.sleep(1)
+            return None
+        except Exception as e:
+            print(f"❌ Error al capturar imagen: {str(e)}")
             return None
 
 
@@ -172,19 +228,26 @@ class SIDGenerator:
         self.config = config
         self.app = xw.App(visible=False)
 
-    def crear_copia(self, output_path, datos_tss, imagen_ubicacion=None, imagen_rango=None):
+    def crear_copia(self, output_path, datos_tss, imagenes):
         """Crear copia del SID con datos procesados"""
         try:
             wb = self.app.books.open(self.plantilla_path)
 
             self._fill_cover_page(wb, datos_tss)
-            self._insert_location_image(wb, imagen_ubicacion)
-            self._insert_data_range_image(wb, imagen_rango)
+
+            # Insertar todas las imágenes
+            if 'ubicacion' in imagenes:
+                self._insert_location_image(wb, imagenes['ubicacion'])
+            if 'llaves' in imagenes:
+                self._insert_data_range_image(wb, imagenes['llaves'], self.config.get('celdas_sid', 'llaves_datos'), 'datos_generales')
+            if 'observaciones' in imagenes:
+                self._insert_data_range_image(wb, imagenes['observaciones'], self.config.get('celdas_sid', 'observaciones_generales'),'datos_generales')
+            if 'ingreso' in imagenes:
+                self._insert_data_range_image(wb, imagenes['ingreso'], self.config.get('celdas_sid', 'ingreso'),'datos_generales')
 
             wb.save(output_path)
             wb.close()
             return True
-
         except Exception as e:
             print(f"❌ Error generando SID: {str(e)}")
             return False
@@ -213,22 +276,21 @@ class SIDGenerator:
         )
         os.unlink(imagen_ubicacion)
 
-    def _insert_data_range_image(self, wb, imagen_rango):
-        """Insertar imagen de rango de datos si existe"""
-        if not imagen_rango or not os.path.exists(imagen_rango):
+    def _insert_data_range_image(self, wb, imagen_path, celda_destino, sheet_name):
+        """Versión genérica para insertar cualquier imagen en celda especificada"""
+        if not imagen_path or not os.path.exists(imagen_path):
             return
 
-        sheet = wb.sheets[self.config.get('hojas_sid', 'datos_generales')]
-        celda_llaves = self.config.get('celdas_sid', 'llaves_datos')
+        sheet = wb.sheets[self.config.get('hojas_sid', sheet_name)]
 
         sheet.pictures.add(
-            imagen_rango,
-            left=sheet.range(celda_llaves).left,
-            top=sheet.range(celda_llaves).top,
+            imagen_path,
+            left=sheet.range(celda_destino).left,
+            top=sheet.range(celda_destino).top,
             width=None,
             height=None
         )
-        os.unlink(imagen_rango)
+        os.unlink(imagen_path)
 
 def main():
     # Inicializar configuración
@@ -262,11 +324,18 @@ def main():
     print("=== Extrayendo imagen de ubicación ===")
     imagen_ubicacion = tss_processor.extraer_imagen()
 
-    print("\n=== Capturando rango como imagen ===")
-    imagen_rango = tss_processor.capturar_rango_como_imagen()
+    print("\n=== Capturando múltiples rangos como imágenes ===")
+    rangos_a_capturar = {
+        'llaves': config.get('celdas_tss', 'rango_llaves'),
+        'observaciones': config.get('celdas_tss', 'rango_observaciones_generales'),
+        'ingreso': config.get('celdas_tss', 'rango_ingreso')
+    }
 
-    if not imagen_rango:
-        print("❌ No se pudo capturar el rango como imagen")
+    imagenes = tss_processor.capturar_multiples_rangos(rangos_a_capturar)
+    imagenes['ubicacion'] = tss_processor.extraer_imagen()  # Añadir la imagen de ubicación
+
+    if not imagenes.get('llaves'):
+        print("❌ No se pudo capturar el rango principal como imagen")
         return
 
     # Generar SID
@@ -274,7 +343,7 @@ def main():
     nuevo_nombre = f"SID MIC BO 3YPLAN 2024_{datos['name']}_{datos['id']}_RevP.xlsx"
     output_path = os.path.join(output_folder, nuevo_nombre)
 
-    if sid_generator.crear_copia(output_path, datos, imagen_ubicacion, imagen_rango):
+    if sid_generator.crear_copia(output_path, datos, imagenes):
         print(f"\n✅ SID generado exitosamente: {output_path}")
     else:
         print("\n❌ Fallo al generar SID")
