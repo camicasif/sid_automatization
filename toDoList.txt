@@ -7,6 +7,7 @@ imagenes se copien y se ordenen con descripcion abajo ) Al lado una foto de la t
     5.1 identificar de donde se saca las fotos del lugar
 
     J55
+      "destino": {"hoja": "datos_generales", "celda": ["G568","C618"]}
 
   AVERIGUAR PORQUE NO GENERA EL SID,
   MEJORAR LOGICA DE SACAR Y PONER FOTOS

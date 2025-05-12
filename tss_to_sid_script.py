@@ -202,7 +202,7 @@ class TSSProcessor:
             col_letter_start = openpyxl.utils.get_column_letter(min_col)
             col_letter_end = openpyxl.utils.get_column_letter(max_col)
 
-            print(f"\n🔍 Buscando imagen en rango: "
+            print(f"🔍 Buscando imagen {elemento['nombre']} en rango: "
                   f"{col_letter_start}{min_row}:{col_letter_end}{max_row} "
                   f"(Columnas {min_col}-{max_col}, Filas {min_row}-{max_row})")
 
@@ -222,7 +222,7 @@ class TSSProcessor:
                           f"Columna {img_left}, Fila {img_top}")
                     return img_path
 
-            print(f"⚠️ Imagen no encontrada en el rango especificado")
+            print(f"⚠️ Imagen {elemento['nombre']} no encontrada en el rango especificado")
             return None
 
         except Exception as e:
@@ -233,9 +233,9 @@ class TSSProcessor:
         """Encontrar rango combinado para la celda objetivo"""
         for merged_cell in sheet.merged_cells.ranges:  # Usar sheet en lugar de self.sheet_tss
             if target_cell.coordinate in merged_cell:
-                print(f"✅ Celda combinada encontrada: {merged_cell.coord}")
+                print(f"\n ✅ Celda combinada encontrada: {merged_cell.coord}")
                 return merged_cell
-        print(f"ℹ️ Celda no está combinada")
+        print(f"\n ℹ️ Celda no está combinada")
         return None
 
     def _get_expanded_range(self, target_cell, merged_range):
