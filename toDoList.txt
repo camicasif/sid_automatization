@@ -33,7 +33,7 @@ imagenes se copien y se ordenen con descripcion abajo ) Al lado una foto de la t
     fotos: [
              {
                         nombre: "ubicacion",
-                        celda: "J55",
+                        celda_combinada: "J55",
                         hoja: datos_generales (redirigirlo a un enum),
                         celda: "D49"
              },
@@ -183,3 +183,41 @@ def main():
 if __name__ == "__main__":
     print("=== CAPTURADOR ROBUSTO DE RANGOS EXCEL ===")
     main()
+
+{
+  "celdas_tss": {
+    "id": "H7",
+    "name": "H8",
+    "texto_busqueda": "1.2.14",
+    "foto_ubicacion": "J55",
+    "rango_llaves": "A84:AM98",
+    "rango_observaciones_generales": "A159:AM165",
+    "rango_ingreso": "B182:AJ219",
+    "foto_torre": "C295",
+    "fotos_shelter_indoor":["C123","I136"],
+    "fotos_shelter_outdoor":["C324","I338"]
+  },
+  "celdas_sid": {
+    "codigo_portada": "A45",
+    "foto_ubicacion": "D49",
+    "llaves_datos": "A481",
+    "observaciones_generales": "A502",
+    "ingreso": "A524",
+    "foto_torre": "J525",
+    "fotos_shelter": ["I541","K541"]
+
+  },
+  "hojas_tss": {
+    "informacion": 0,
+    "energia": 1,
+    "cabinas": 2,
+    "torres": 7,
+    "puesta_tierra": 8
+
+  },
+  "hojas_sid": {
+    "portada": 4,
+    "ubicacion_sitio": 5,
+    "datos_generales": 6
+  }
+}

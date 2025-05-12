@@ -1,37 +1,62 @@
 {
-  "celdas_tss": {
-    "id": "H7",
-    "name": "H8",
-    "texto_busqueda": "1.2.14",
-    "foto_ubicacion": "J55",
-    "rango_llaves": "A84:AM98",
-    "rango_observaciones_generales": "A159:AM165",
-    "rango_ingreso": "B182:AJ219",
-    "foto_torre": "C295",
-    "fotos_shelter_indoor":["C123","I136"],
-    "fotos_shelter_outdoor":["C324","I338"]
+  "hojas": {
+    "tss": {
+      "informacion": 0,
+      "energia": 1,
+      "cabinas": 2,
+      "torres": 7,
+      "puesta_tierra": 8
+    },
+    "sid": {
+      "portada": 4,
+      "ubicacion_sitio": 5,
+      "datos_generales": 6
+    }
   },
-  "celdas_sid": {
-    "codigo_portada": "A45",
-    "foto_ubicacion": "D49",
-    "llaves_datos": "A481",
-    "observaciones_generales": "A502",
-    "ingreso": "A524",
-    "foto_torre": "J525",
-    "fotos_shelter": ["I541","K541"]
-
+  "nombre_sid": {
+    "plantilla": "SID MIC BO 3YPLAN 2024_Name_ID_RevP.xlsx",
+    "formato": "SID MIC BO 3YPLAN 2024_{name}_{id}_RevP.xlsx",
+    "campos": {
+      "id": {
+        "hoja": "informacion",
+        "celda": "H7"
+      },
+      "name": {
+        "hoja": "informacion",
+        "celda": "H8"
+      }
+    }
   },
-  "hojas_tss": {
-    "informacion": 0,
-    "energia": 1,
-    "cabinas": 2,
-    "torres": 7,
-    "puesta_tierra": 8
-
-  },
-  "hojas_sid": {
-    "portada": 4,
-    "ubicacion_sitio": 5,
-    "datos_generales": 6
-  }
+  "elementos": [
+    {
+      "nombre": "id_sitio",
+      "tipo": "texto",
+      "origen": {"hoja": "informacion", "celda": "H7"},
+      "destino": {"hoja": "portada", "celda": "A45"}
+    },
+    {
+      "nombre": "ubicacion_img",
+      "tipo": "imagen",
+      "origen": {"hoja": "informacion", "celda": "J55", "combinada": true},
+      "destino": {"hoja": "ubicacion_sitio", "celda": "D49"}
+    },
+    {
+      "nombre": "llaves",
+      "tipo": "rango",
+      "origen": {"hoja": "informacion", "rango": "A84:AM98"},
+      "destino": {"hoja": "datos_generales", "celda": "A481"}
+    },
+    {
+      "nombre": "observaciones_generales",
+      "tipo": "rango",
+      "origen": {"hoja": "informacion", "rango": "A159:AM165"},
+      "destino": {"hoja": "datos_generales", "celda": "A502"}
+    },
+    {
+      "nombre": "ingreso",
+      "tipo": "rango",
+      "origen": {"hoja": "informacion", "rango": "B182:AJ219"},
+      "destino": {"hoja": "datos_generales", "celda": "A524"}
+    }
+  ]
 }
