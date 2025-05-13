@@ -1,224 +1,33 @@
-1. Copiar la plantilla del sid
-2. Poner el codigo que corresponde para la portada
-3. Poner la foto del sitio en ubicacion del sitio
-4. Colocar imagenes de las llaves y observaciones generales
-5. Colocar 12 imagenes de ingreso del sitio (preguntar si esta bien las 12 o si prefiere que las
-imagenes se copien y se ordenen con descripcion abajo ) Al lado una foto de la torre y dos fotos del lugar
-    5.1 identificar de donde se saca las fotos del lugar
+Que algunos rangos sean opcionales, buscar si tienen fotos, si no tienen que sean opcionales
+llevar todas las fotos al fondo
+Hacer las diapositivas y pegarlas en la pagina 8
+_check CADA CAPTURA DEBERIA TENER SU PROPIO IDENTIFICADOR COMO ARCHIVO
+_check AGRUPARLO POR CARPETA NOMBRE DE SITIO
 
-    J55
-      "destino": {"hoja": "datos_generales", "celda": ["G568","C618"]}
+Para eso lo primero que se debe sacar es el nombre, despues lo demas
 
-  AVERIGUAR PORQUE NO GENERA EL SID,
-  MEJORAR LOGICA DE SACAR Y PONER FOTOS
-  QUE SEA AUTOMAICO, SAQUE TODOS LOS RANGOS DE CONFIG.JSON Y FOTOS POR CELDAS COMBINAADAS
-  LAS GUARDE EN CAPTURAS
-  LAS PEGUE EN SU POSICION CORRESPONDIENTE EN EL SID
-
-  SID {
-    rangos:[
-        {
-            nombre: "llaves",
-            rango: "A84:AM98",
-            hoja: datos_generales (redirigirlo a un enum),
-            celda: "A481"
-        },
-        {
-            nombre: "ingreso",
-            rango: "B182:AJ219",
-            hoja: datos_generales (redirigirlo a un enum),
-            celda: "A524"
-        },
-
-    ]
-    fotos: [
-             {
-                        nombre: "ubicacion",
-                        celda_combinada: "J55",
-                        hoja: datos_generales (redirigirlo a un enum),
-                        celda: "D49"
-             },
-    ]
-    texto:{
-
-    }
-
-    //excepciones, fotos shelter indoor y outdoor dependen de condicionales
-    si las dos de arriba o las dos de abajo
-
-  }
-
-intenta el metodo que ya tenes y aislalo en otro script
-para ver si no esta mezclando el excel con
-
-
-import os
-import time
-import win32com.client as win32
-import win32gui
-import win32con
-from PIL import Image, ImageGrab
-
-def listar_ventanas_office():
-    """Lista todas las ventanas relacionadas con Office"""
-    office_windows = []
-
-    def callback(hwnd, _):
-        title = win32gui.GetWindowText(hwnd)
-        class_name = win32gui.GetClassName(hwnd)
-
-        # Filtramos ventanas de Office/Excel que no sean la principal
-        if (win32gui.IsWindowVisible(hwnd) and title and
-                ("Excel" in title or "Office" in title or class_name in ['NUIDialog', '#32770'])):
-            office_windows.append((hwnd, title, class_name))
-
-    win32gui.EnumWindows(callback, None)
-    return office_windows
-
-def cerrar_dialogos_office():
-    """Cierra cualquier diálogo modal de Office"""
-    dialogs_closed = 0
-    windows = listar_ventanas_office()
-
-    for hwnd, title, class_name in windows:
+    def _procesar_rango(self, elemento):
+        """Captura rangos usando Excel COM (requiere Excel instalado)"""
+        excel = None
         try:
-            # Solo cerrar diálogos (no la ventana principal de Excel)
-            if class_name in ['NUIDialog', '#32770'] and "Excel" not in title:
-                print(f"⚠️ Detectado diálogo - Título: '{title}' | Clase: '{class_name}'")
+            excel = win32.gencache.EnsureDispatch('Excel.Application')
+            excel.Visible = True
+            wb = excel.Workbooks.Open(os.path.abspath(self.tss_path))
+            sheet = wb.Sheets(self._obtener_hoja_indice('tss', elemento['origen']['hoja']) + 1)
 
-                # Intentar cierre amable
-                win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
-                time.sleep(2)
-
-                # Verificar si sigue abierto
-                if win32gui.IsWindow(hwnd):
-                    print("   ⚠️ No respondió, forzando cierre...")
-                    win32gui.SendMessage(hwnd, win32con.WM_SYSCOMMAND, win32con.SC_CLOSE, 0)
-                    time.sleep(1)
-
-                if not win32gui.IsWindow(hwnd):
-                    print("   ✅ Diálogo cerrado exitosamente")
-                    dialogs_closed += 1
-        except Exception as e:
-            print(f"   ⚠️ Error al cerrar ventana: {e}")
-
-    return dialogs_closed
-
-def capturar_rango_seguro(sheet, rango):
-    """Captura un rango con manejo robusto de errores"""
-    for intento in range(3):
-        try:
-            sheet.Range(rango).CopyPicture(Appearance=1, Format=2)
-            time.sleep(2)  # Espera crítica
+            # Capturar rango como imagen
+            sheet.Range(elemento['origen']['rango']).CopyPicture(Appearance=1, Format=2)
+            time.sleep(1)  # Esperar para operación de portapapeles
 
             img = ImageGrab.grabclipboard()
             if img:
-                return img
-            else:
-                print(f"⚠️ Intento {intento+1}: Portapapeles vacío")
+                img_path = os.path.join("capturas", f"{elemento['nombre']}.png")
+                img.save(img_path)
+                self.data['imagenes'][elemento['nombre']] = img_path
+                print(f"Rango '{elemento['nombre']}' capturado en {img_path}")
+
         except Exception as e:
-            print(f"⚠️ Intento {intento+1}: {str(e)}")
-
-        # Antes de reintentar, cerrar posibles diálogos
-        cerrar_dialogos_office()
-        time.sleep(1)
-
-    return None
-
-def main():
-    # Configuración
-    RANGOS = {
-        'llaves': 'A84:AM98',
-        'observaciones': 'A159:AM165',
-        'ingreso': 'B182:AJ219'
-    }
-
-    # 1. Preparar entorno
-    os.makedirs("capturas", exist_ok=True)
-    os.system('taskkill /f /im excel.exe')
-    time.sleep(2)
-
-    excel = None
-    try:
-        # 2. Iniciar Excel
-        excel = win32.gencache.EnsureDispatch('Excel.Application')
-        excel.Visible = True
-        excel.DisplayAlerts = False
-
-        # 3. Abrir archivo
-        tss_path = os.path.abspath("TSS_PRUEBA/TSS_CHORO GRANDE_rev.0_30.04.2025.xlsm")
-        print(f"\n📂 Abriendo archivo: {tss_path}")
-        wb = excel.Workbooks.Open(tss_path)
-        sheet = wb.Sheets(1)
-
-        # 4. Cerrar diálogos antes de empezar
-        print("\n🔍 Buscando diálogos de Office...")
-        cerrar_dialogos_office()
-
-        # 5. Capturar rangos
-        resultados = {}
-        for nombre, rango in RANGOS.items():
-            print(f"\n📷 Capturando {nombre} ({rango})...")
-
-            img = capturar_rango_seguro(sheet, rango)
-            if img:
-                output_path = f"capturas/{nombre}.png"
-                img.save(output_path)
-                resultados[nombre] = output_path
-                print(f"✅ Guardado en {output_path}")
-            else:
-                resultados[nombre] = None
-                print(f"❌ Falló la captura de {nombre}")
-
-        # 6. Resultados finales
-        print("\n=== RESULTADOS ===")
-        for nombre, archivo in resultados.items():
-            print(f"{nombre}: {'✅' if archivo else '❌'} {archivo or 'Falló'}")
-
-    except Exception as e:
-        print(f"\n❌ Error crítico: {str(e)}")
-    finally:
-        if excel:
-            print("\nℹ️ Excel se mantiene abierto para inspección manual")
-
-if __name__ == "__main__":
-    print("=== CAPTURADOR ROBUSTO DE RANGOS EXCEL ===")
-    main()
-
-{
-  "celdas_tss": {
-    "id": "H7",
-    "name": "H8",
-    "texto_busqueda": "1.2.14",
-    "foto_ubicacion": "J55",
-    "rango_llaves": "A84:AM98",
-    "rango_observaciones_generales": "A159:AM165",
-    "rango_ingreso": "B182:AJ219",
-    "foto_torre": "C295",
-    "fotos_shelter_indoor":["C123","I136"],
-    "fotos_shelter_outdoor":["C324","I338"]
-  },
-  "celdas_sid": {
-    "codigo_portada": "A45",
-    "foto_ubicacion": "D49",
-    "llaves_datos": "A481",
-    "observaciones_generales": "A502",
-    "ingreso": "A524",
-    "foto_torre": "J525",
-    "fotos_shelter": ["I541","K541"]
-
-  },
-  "hojas_tss": {
-    "informacion": 0,
-    "energia": 1,
-    "cabinas": 2,
-    "torres": 7,
-    "puesta_tierra": 8
-
-  },
-  "hojas_sid": {
-    "portada": 4,
-    "ubicacion_sitio": 5,
-    "datos_generales": 6
-  }
-}
+            print(f"Error capturando rango {elemento['nombre']}: {str(e)}")
+        finally:
+            if excel:
+                excel.Quit()

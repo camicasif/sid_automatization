@@ -1,6 +1,8 @@
 import io
 import os
 import json
+
+import win32com
 from PIL import Image, ImageGrab
 import openpyxl
 import xlwings as xw
@@ -12,17 +14,52 @@ from openpyxl.utils import get_column_letter
 
 
 # -*- coding: utf-8 -*-
+def listar_ventanas_office():
+    office_windows = []
+
+    def callback(hwnd, _):
+        title = win32gui.GetWindowText(hwnd)
+        class_name = win32gui.GetClassName(hwnd)
+        if (win32gui.IsWindowVisible(hwnd) and title and
+                ("Excel" in title or "Office" in title or class_name in ['NUIDialog', '#32770'])):
+            office_windows.append((hwnd, title, class_name))
+
+    win32gui.EnumWindows(callback, None)
+    return office_windows
+
+
+def cerrar_dialogos_office():
+    dialogs_closed = 0
+    windows = listar_ventanas_office()
+    for hwnd, title, class_name in windows:
+        try:
+            if class_name in ['NUIDialog', '#32770'] and "Excel" not in title:
+                win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+                time.sleep(2)
+                if win32gui.IsWindow(hwnd):
+                    win32gui.SendMessage(hwnd, win32con.WM_SYSCOMMAND, win32con.SC_CLOSE, 0)
+                    time.sleep(1)
+                if not win32gui.IsWindow(hwnd):
+                    dialogs_closed += 1
+        except:
+            pass
+    return dialogs_closed
+
+
 class TSSProcessor:
     def __init__(self, config_path='config.json'):
-        self.config = self._load_config(config_path)
+        self.config = self._cargar_configuracion(config_path)
         self.data = {'textos': {}, 'imagenes': {}}
-        os.makedirs("capturas", exist_ok=True)
+        self.capturas_dir = None
+        self.nombre_sid = None
 
-    def _load_config(self, config_path):
+    # Configuración y helpers básicos
+
+    def _cargar_configuracion(self, config_path):
         with open(config_path, encoding='utf-8') as f:
             return json.load(f)
 
-    def _get_sheet_index(self, workbook_type, sheet_name):
+    def _obtener_hoja_indice(self, workbook_type, sheet_name):
         return self.config['hojas'][workbook_type][sheet_name]
 
     def _generar_nombre_sid(self, tss_path):
@@ -38,7 +75,7 @@ class TSSProcessor:
             valores = {}
             for campo, config in config_campos.items():
                 # Obtener hoja y celda desde la configuración
-                sheet_index = self._get_sheet_index('tss', config['hoja'])
+                sheet_index = self._obtener_hoja_indice('tss', config['hoja'])
                 sheet = wb_tss.worksheets[sheet_index]
                 celda = config['celda']
 
@@ -58,9 +95,20 @@ class TSSProcessor:
             print(f"⚠️ Error generando nombre: {str(e)}")
             # Nombre de respaldo con timestamp
             return f"SID_GENERADO_{time.strftime('%Y%m%d_%H%M%S')}.xlsx"
-    def procesar_tss(self, tss_path):
+
+    #Capturar informacion del tss
+
+    def procesar_tss(self, tss_path, nombre_sid=None):
         """Procesa el TSS agrupando elementos por tipo para optimización"""
         print("\n=== PROCESANDO TSS ===")
+        if nombre_sid is None:
+            nombre_sid = self._generar_nombre_sid(tss_path)
+
+        self.nombre_sid = nombre_sid
+        self.capturas_dir = os.path.join("capturas", os.path.splitext(nombre_sid)[0])
+        os.makedirs(self.capturas_dir, exist_ok=True)
+        print(f"📁 Directorio de capturas creado: {self.capturas_dir}")
+
         wb_tss = openpyxl.load_workbook(tss_path, data_only=True)
 
         elementos_por_tipo = {
@@ -88,23 +136,33 @@ class TSSProcessor:
         wb_tss.close()
         print("=== EXTRACCIÓN COMPLETADA ===")
 
+    # Procesamiento interno del tss
+
+    def _procesar_texto(self, wb_tss, elemento):
+        sheet_index = self._obtener_hoja_indice('tss', elemento['origen']['hoja'])
+        sheet = wb_tss.worksheets[sheet_index]
+        valor = sheet[elemento['origen']['celda']].value
+        self.data['textos'][elemento['nombre']] = str(valor).strip() if valor else ""
+        print(f"Texto '{elemento['nombre']}' extraído: {self.data['textos'][elemento['nombre']]}")
+
     def _procesar_rangos_agrupados(self, wb_tss, elementos_rango):
-        """Procesa todos los rangos juntos usando Excel COM"""
+        """Prepara el diccionario de rangos con información de hoja"""
         rangos_dict = {
-            elem['nombre']: elem['origen']['rango']
+            elem['nombre']: {
+                'rango': elem['origen']['rango'],
+                'hoja': elem['origen']['hoja']
+            }
             for elem in elementos_rango
         }
 
         resultados = self.capturar_multiples_rangos(rangos_dict)
 
-        # Guardar resultados en self.data
         for nombre, ruta_imagen in resultados.items():
             if ruta_imagen:
                 self.data['imagenes'][nombre] = ruta_imagen
 
-    def capturar_multiples_rangos(self, rangos):
-        """Captura múltiples rangos y guarda directamente en carpeta capturas"""
-        os.makedirs("capturas", exist_ok=True)
+    def capturar_multiples_rangos(self, rangos_dict):
+        """Captura múltiples rangos de hojas específicas y guarda en carpeta capturas"""
         excel = None
         resultados = {}
 
@@ -114,26 +172,29 @@ class TSSProcessor:
             excel.DisplayAlerts = False
 
             wb = excel.Workbooks.Open(os.path.abspath(self.tss_path))
-            sheet = wb.Sheets(1)
+            cerrar_dialogos_office()
 
-            self.cerrar_dialogos_office()
+            for nombre, config in rangos_dict.items():
+                output_path = os.path.join(self.capturas_dir, f"{nombre}.png")
 
-            for nombre, rango in rangos.items():
-                output_path = os.path.join("capturas", f"{nombre}.png")
+                # Obtener índice de hoja desde la configuración
+                sheet_index = self._obtener_hoja_indice('tss', config['hoja']) + 1  # Excel usa base 1
+                sheet = wb.Sheets(sheet_index)
+
                 for intento in range(3):
                     try:
-                        sheet.Range(rango).CopyPicture(Appearance=1, Format=2)
+                        sheet.Range(config['rango']).CopyPicture(Appearance=1, Format=2)
                         time.sleep(2)
 
                         img = ImageGrab.grabclipboard()
                         if img:
                             img.save(output_path)
                             resultados[nombre] = output_path
-                            print(f"✅ {nombre} guardado en {output_path}")
+                            print(f"✅ {nombre} guardado en {output_path} (Hoja: {config['hoja']})")
                             break
                     except Exception as e:
                         print(f"⚠️ Intento {intento + 1} para {nombre}: {str(e)}")
-                        self.cerrar_dialogos_office()
+                        cerrar_dialogos_office()
                         time.sleep(1)
                 else:
                     resultados[nombre] = None
@@ -150,53 +211,17 @@ class TSSProcessor:
                     excel.Quit()
                 except:
                     pass
-    def listar_ventanas_office(self):
-        office_windows = []
-
-        def callback(hwnd, _):
-            title = win32gui.GetWindowText(hwnd)
-            class_name = win32gui.GetClassName(hwnd)
-            if (win32gui.IsWindowVisible(hwnd) and title and
-                    ("Excel" in title or "Office" in title or class_name in ['NUIDialog', '#32770'])):
-                office_windows.append((hwnd, title, class_name))
-
-        win32gui.EnumWindows(callback, None)
-        return office_windows
-
-    def cerrar_dialogos_office(self):
-        dialogs_closed = 0
-        windows = self.listar_ventanas_office()
-        for hwnd, title, class_name in windows:
-            try:
-                if class_name in ['NUIDialog', '#32770'] and "Excel" not in title:
-                    win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
-                    time.sleep(2)
-                    if win32gui.IsWindow(hwnd):
-                        win32gui.SendMessage(hwnd, win32con.WM_SYSCOMMAND, win32con.SC_CLOSE, 0)
-                        time.sleep(1)
-                    if not win32gui.IsWindow(hwnd):
-                        dialogs_closed += 1
-            except:
-                pass
-        return dialogs_closed
-
-    def _procesar_texto(self, wb_tss, elemento):
-        sheet_index = self._get_sheet_index('tss', elemento['origen']['hoja'])
-        sheet = wb_tss.worksheets[sheet_index]
-        valor = sheet[elemento['origen']['celda']].value
-        self.data['textos'][elemento['nombre']] = str(valor).strip() if valor else ""
-        print(f"Texto '{elemento['nombre']}' extraído: {self.data['textos'][elemento['nombre']]}")
 
     def _procesar_imagen(self, wb_tss, elemento):
         """Busca imágenes mostrando el rango de celdas de búsqueda"""
         try:
-            sheet_index = self._get_sheet_index('tss', elemento['origen']['hoja'])
+            sheet_index = self._obtener_hoja_indice('tss', elemento['origen']['hoja'])
             sheet = wb_tss.worksheets[sheet_index]
             celda = sheet[elemento['origen']['celda']]
 
             # Determinar coordenadas de búsqueda
-            merged_range = self._find_merged_range(celda, sheet)  # Pasar sheet como parámetro
-            min_row, max_row, min_col, max_col = self._get_expanded_range(celda, merged_range)
+            merged_range = self._encontrar_rango_combinado(celda, sheet)  # Pasar sheet como parámetro
+            min_row, max_row, min_col, max_col = self._obtener_rango_expandido(celda, merged_range)
 
             # Convertir coordenadas numéricas a formato de letra de columna (A, B, C...)
             col_letter_start = openpyxl.utils.get_column_letter(min_col)
@@ -212,10 +237,9 @@ class TSSProcessor:
                 img_left = img.anchor._from.col + 1
 
                 if (min_row <= img_top <= max_row) and (min_col <= img_left <= max_col):
-                    img_path = os.path.join("capturas", f"{elemento['nombre']}.png")
+                    img_path = os.path.join(self.capturas_dir, f"{elemento['nombre']}.png")
                     image_bytes = img._data()
                     image = Image.open(io.BytesIO(image_bytes))
-                    os.makedirs("capturas", exist_ok=True)
                     image.save(img_path)
                     self.data['imagenes'][elemento['nombre']] = img_path
                     print(f"✅ Imagen '{elemento['nombre']}' encontrada en posición: "
@@ -229,7 +253,7 @@ class TSSProcessor:
             print(f"❌ Error al buscar imagen: {str(e)}")
             return None
 
-    def _find_merged_range(self, target_cell, sheet):
+    def _encontrar_rango_combinado(self, target_cell, sheet):
         """Encontrar rango combinado para la celda objetivo"""
         for merged_cell in sheet.merged_cells.ranges:  # Usar sheet en lugar de self.sheet_tss
             if target_cell.coordinate in merged_cell:
@@ -238,7 +262,7 @@ class TSSProcessor:
         print(f"\n ℹ️ Celda no está combinada")
         return None
 
-    def _get_expanded_range(self, target_cell, merged_range):
+    def _obtener_rango_expandido(self, target_cell, merged_range):
         """Obtener rango ampliado para búsqueda de imagen"""
         if merged_range:
             min_row, max_row = merged_range.min_row, merged_range.max_row
@@ -254,49 +278,30 @@ class TSSProcessor:
             max(1, min_col - 1),  # expanded_min_col
             max_col               # expanded_max_col
         )
-    def _procesar_rango(self, elemento):
-        """Captura rangos usando Excel COM (requiere Excel instalado)"""
-        excel = None
-        try:
-            excel = win32.gencache.EnsureDispatch('Excel.Application')
-            excel.Visible = True
-            wb = excel.Workbooks.Open(os.path.abspath(self.tss_path))
-            sheet = wb.Sheets(self._get_sheet_index('tss', elemento['origen']['hoja']) + 1)
 
-            # Capturar rango como imagen
-            sheet.Range(elemento['origen']['rango']).CopyPicture(Appearance=1, Format=2)
-            time.sleep(1)  # Esperar para operación de portapapeles
-
-            img = ImageGrab.grabclipboard()
-            if img:
-                img_path = os.path.join("capturas", f"{elemento['nombre']}.png")
-                img.save(img_path)
-                self.data['imagenes'][elemento['nombre']] = img_path
-                print(f"Rango '{elemento['nombre']}' capturado en {img_path}")
-
-        except Exception as e:
-            print(f"Error capturando rango {elemento['nombre']}: {str(e)}")
-        finally:
-            if excel:
-                excel.Quit()
+    #Generacion de sid
 
     def generar_sid(self, plantilla_path, output_path):
-        """Genera el SID con los datos extraídos"""
+        """Genera el SID con los datos extraídos, soportando múltiples celdas destino"""
         print("\n=== GENERANDO SID ===")
         app = xw.App(visible=False)
 
         try:
             wb_sid = app.books.open(plantilla_path)
 
-            # 1. Insertar textos
+            # 1. Insertar textos (ahora soporta múltiples celdas destino)
             for elemento in self.config['elementos']:
                 if elemento['tipo'] == 'texto' and elemento['nombre'] in self.data['textos']:
-                    sheet_index = self._get_sheet_index('sid', elemento['destino']['hoja'])
-                    wb_sid.sheets[sheet_index][elemento['destino']['celda']].value = self.data['textos'][
-                        elemento['nombre']]
-                    print(f"Texto '{elemento['nombre']}' insertado en {elemento['destino']['celda']}")
+                    sheet_index = self._obtener_hoja_indice('sid', elemento['destino']['hoja'])
+                    sheet = wb_sid.sheets[sheet_index]
+                    valor = self.data['textos'][elemento['nombre']]
 
-            # 2. Insertar imágenes
+                    # Insertar el mismo valor en todas las celdas especificadas
+                    for celda in elemento['destino']['celdas']:
+                        sheet[celda].value = valor
+                        print(f"Texto '{elemento['nombre']}' insertado en {celda}")
+
+            # 2. Insertar imágenes/rangos (ya soporta múltiples celdas via _insertar_imagen)
             for elemento in self.config['elementos']:
                 if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in self.data['imagenes']:
                     self._insertar_imagen(wb_sid, elemento)
@@ -311,7 +316,7 @@ class TSSProcessor:
         finally:
             app.quit()
 
-    def _get_sheet(self, wb, sheet_identifier, book_type='sid'):
+    def _obtener_hoja(self, wb, sheet_identifier, book_type='sid'):
         """
         Obtiene una hoja por nombre o índice, con manejo de errores mejorado
         :param wb: Libro de trabajo (xlwings)
@@ -321,7 +326,7 @@ class TSSProcessor:
         """
         try:
             # Si es string, buscar en la configuración
-            sheet_index = self._get_sheet_index(book_type, sheet_identifier)
+            sheet_index = self._obtener_hoja_indice(book_type, sheet_identifier)
             return wb.sheets[sheet_index]
 
         except Exception as e:
@@ -332,53 +337,90 @@ class TSSProcessor:
             ) from e
 
     def _insertar_imagen(self, wb_sid, elemento):
-        """Versión mejorada con manejo completo de errores"""
+        """Versión que soporta tamaño específico para imágenes y centrado en celda"""
         try:
             nombre = elemento['nombre']
             print(f"\n=== Insertando imagen '{nombre}' ===")
 
-            # 1. Verificar existencia de la imagen (CON RUTA ABSOLUTA)
-            img_path = os.path.abspath(self.data['imagenes'].get(nombre))  # <- Único cambio necesario
+            # 1. Verificar existencia de la imagen
+            img_path = os.path.abspath(self.data['imagenes'].get(nombre))
             if not os.path.exists(img_path):
-                available = [os.path.abspath(os.path.join("capturas", f)) for f in os.listdir("capturas") if f.endswith('.png')]
                 raise FileNotFoundError(
-                    f"Imagen no encontrada.\n"
-                    f"Buscada: {img_path}\n"
-                    f"Existentes: {available}"
-                )
+                    f"Imagen no encontrada.\nBuscada: {img_path}")
 
-            # Resto del método ORIGINAL (sin cambios)
-            sheet_index = self._get_sheet_index('sid', elemento['destino']['hoja'])
+            # 2. Obtener hoja destino
+            sheet_index = self._obtener_hoja_indice('sid', elemento['destino']['hoja'])
             sheet = wb_sid.sheets[sheet_index]
             print(f"Hoja destino: {sheet.name} (índice {sheet.index})")
 
-            celda = elemento['destino']['celda']
-            rango = sheet.range(celda)
-            print(f"Rango destino: {rango.address} {img_path}")
+            # 3. Obtener y convertir dimensiones (cm a puntos)
+            width_cm = elemento['destino'].get('ancho')  # En cm
+            height_cm = elemento['destino'].get('alto')  # En cm
 
-            try:
-                picture = sheet.pictures.add(
-                    img_path,  # <- Ya usa la ruta absoluta
-                    left=rango.left,
-                    top=rango.top,
-                    width=None,
-                    height=None
-                )
-                print(f"✅ Imagen insertada")
-                return picture
-            except Exception as e:
-                print(f"⚠️ Intento fallido: {type(e).__name__} - {str(e)}")
+            # Convertir cm a puntos (1 cm = 28.35 puntos)
+            width = width_cm * 28.35 if width_cm is not None else None
+            height = height_cm * 28.35 if height_cm is not None else None
+
+            print(f"Configuración de tamaño - Ancho: {width_cm}cm ({width}pt), Alto: {height_cm}cm ({height}pt)")
+
+            # 4. Procesar TODAS las celdas destino
+            for celda in elemento['destino']['celdas']:
+                try:
+                    rango = sheet.range(celda)
+                    print(f"Insertando en celda: {rango.address}")
+
+                    # Calcular posición centrada
+                    left = rango.left + 5
+                    top = rango.top + 5
+
+                    # Insertar imagen
+                    picture = sheet.pictures.add(
+                        img_path,
+                        left=left,
+                        top=top,
+                        width=width,
+                        height=height
+                    )
+
+                    # picture.api.ShapeRange.ZOrder(win32com.client.constants.msoSendToBack)
+                    #
+                    # # Opcional: Bloquear posición y tamaño
+                    # picture.api.Placement = 1
+
+                    # Mantener relación de aspecto si solo se especifica un dimensión
+                    if width is not None and height is None:
+                        # Mantener relación de aspecto basado en el ancho
+                        img = Image.open(img_path)
+                        aspect_ratio = img.height / img.width
+                        picture.height = width * aspect_ratio
+                        # Recalcular posición vertical después de ajustar altura
+                        picture.top = rango.top + (rango.height - picture.height) / 2
+                    elif height is not None and width is None:
+                        # Mantener relación de aspecto basado en el alto
+                        img = Image.open(img_path)
+                        aspect_ratio = img.width / img.height
+                        picture.width = height * aspect_ratio
+                        # Recalcular posición horizontal después de ajustar ancho
+                        picture.left = rango.left + (rango.width - picture.width) / 2
+
+                    print(f"✅ Imagen insertada en {celda} - Tamaño: {width or 'auto'}x{height or 'auto'}")
+
+                except Exception as e:
+                    print(f"⚠️ Error insertando en {celda}: {type(e).__name__} - {str(e)}")
+
+            return True
 
         except Exception as e:
             print(f"\n❌ ERROR insertando '{nombre}': {type(e).__name__}")
             print(f"Mensaje: {str(e)}")
-            print("\n=== DEBUG ===")
-            print("Ruta absoluta fallida:", img_path)
-            return None
+            return False
+
 
 # Uso del sistema
 if __name__ == "__main__":
     processor = TSSProcessor('config.json')
+
+    start_time = time.time()
 
     # Paso 1: Procesar TSS (extraer datos)
     tss_files = [f for f in os.listdir("TSS_PRUEBA") if f.endswith(('.xls', '.xlsx', '.xlsm'))]
@@ -387,11 +429,10 @@ if __name__ == "__main__":
         exit()
 
     tss_path = os.path.join("TSS_PRUEBA", tss_files[0])
-    processor.tss_path = tss_path  # Necesario para captura de rangos
-    processor.procesar_tss(tss_path)
+    processor.tss_path = tss_path
 
-    # Paso 1: Procesar y obtener nombre automático
     nombre_sid = processor._generar_nombre_sid(tss_path)
+    processor.procesar_tss(tss_path,nombre_sid)
 
     # Paso 2: Generar SID
     output_folder = "SIDs"
@@ -399,6 +440,11 @@ if __name__ == "__main__":
     output_path = os.path.join(output_folder, nombre_sid)
 
     processor.generar_sid(
-        plantilla_path="SID MIC BO 3YPLAN 2024_Name_ID_RevP.xlsx",
+        plantilla_path=processor.config['nombre_sid']['plantilla'],
         output_path=output_path
     )
+
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f"\n⏱ Tiempo total de procesamiento: {total_time:.2f} segundos")

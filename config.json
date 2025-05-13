@@ -1,10 +1,435 @@
 {
+
+  "elementos": [
+    {
+      "nombre": "id_sitio",
+      "tipo": "texto",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "H7"
+      },
+      "destino": {
+        "hoja": "portada",
+        "celdas": [
+          "A45"
+        ]
+      }
+    },
+    {
+      "nombre": "ubicacion_img",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "J55"
+      },
+      "destino": {
+        "hoja": "ubicacion_sitio",
+        "celdas": [
+          "E50"
+        ],
+        "ancho": 22,
+        "alto": 15
+      }
+    },
+    {
+      "nombre": "llaves",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "informacion",
+        "rango": "A84:AM98"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A481"
+        ]
+      }
+    },
+    {
+      "nombre": "observaciones_generales",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "informacion",
+        "rango": "A159:AM165"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A502"
+        ]
+      }
+    },
+    {
+      "nombre": "ingreso",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "informacion",
+        "rango": "B182:AJ219"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A524"
+        ],
+        "ancho": 24,
+        "alto": 19
+      }
+    },
+    {
+      "nombre": "torre",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "D297"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "J524"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "shelter_i1",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C126"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "H535"
+        ],
+        "ancho": 7,
+        "alto": 6
+      }
+    },
+    {
+      "nombre": "shelter_i2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I140"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "K543"
+        ],
+        "ancho": 7,
+        "alto": 6
+      }
+    },
+    {
+      "nombre": "shelter_o1",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C326"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "H535"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "shelter_o2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I340"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "K543"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "cabina_cerrada",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C490"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A569"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "cabina_abierta",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I490"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "C569"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "equipos_existentes",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I516"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G568",
+          "C618"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I505"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A618"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "cabina_cerrada2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C530"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A586"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "cabina_abierta2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I530"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "C586"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "equipos_existentes2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I556"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G586",
+          "J618"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I544"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G618"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "clamps",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "torres",
+        "rango": "E1894:V1899"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G1044"
+        ],
+        "ancho": 14,
+        "alto": 5
+      }
+    },
+    {
+      "nombre": "escalerilla_vertical",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "torres",
+        "celda": "F1914"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G1051"
+        ],
+        "ancho": 6,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "plano_clamps",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "torres",
+        "celda": "M1914"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "J1051"
+        ],
+        "ancho": 6,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "barra_tierra_indoor",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "puesta_tierra",
+        "rango": "A9:AJ29"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "B1090"
+        ]
+      }
+    },
+    {
+      "nombre": "barra_tierra_outdoor",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "puesta_tierra",
+        "rango": "A44:AJ64"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "B1107"
+        ]
+      }
+    },
+    {
+      "nombre": "barra_tierra_torre",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "puesta_tierra",
+        "rango": "A170:AJ196"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "B1130"
+        ]
+      }
+    },
+    {
+      "nombre": "equipos_no_operativos_tabla",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "equipos",
+        "rango": "A8:P23"
+      },
+      "destino": {
+        "hoja": "equipos_no_operativos",
+        "celdas": [
+          "A4"
+        ],
+        "ancho": 12,
+        "alto": 8
+      }
+    },
+        {
+      "nombre": "equipos_no_operativos_especificacion",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "equipos",
+        "rango": "R22:AP24"
+      },
+      "destino": {
+        "hoja": "equipos_no_operativos",
+        "celdas": [
+          "F16"
+        ],
+        "ancho": 20,
+        "alto": 5
+      }
+    },
+    {
+      "nombre": "equipos_no_operativos_fotos",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "equipos",
+        "rango": "B25:AG37"
+      },
+      "destino": {
+        "hoja": "equipos_no_operativos",
+        "celdas": [
+          "B22"
+        ],
+        "ancho": 20,
+        "alto": 10
+      }
+    }
+  ],
   "hojas": {
     "tss": {
       "informacion": 0,
       "energia": 1,
       "cabinas": 2,
-      "equipos": 6,
+      "equipos": 5,
       "torres": 7,
       "puesta_tierra": 8
     },
@@ -13,7 +438,6 @@
       "ubicacion_sitio": 5,
       "datos_generales": 6,
       "equipos_no_operativos": 7
-
     }
   },
   "nombre_sid": {
@@ -29,157 +453,5 @@
         "celda": "H8"
       }
     }
-  },
-  "elementos": [
-    {
-      "nombre": "id_sitio",
-      "tipo": "texto",
-      "origen": {"hoja": "informacion", "celda": "H7"},
-      "destino": {"hoja": "portada", "celdas": ["A45"]}
-    },
-    {
-      "nombre": "ubicacion_img",
-      "tipo": "imagen",
-      "origen": {"hoja": "informacion", "celda": "J55", "combinada": true},
-      "destino": {"hoja": "ubicacion_sitio", "celdas": ["D49"] }
-    },
-    {
-      "nombre": "llaves",
-      "tipo": "rango",
-      "origen": {"hoja": "informacion", "rango": "A84:AM98"},
-      "destino": {"hoja": "datos_generales", "celdas": ["A481"]}
-    },
-    {
-      "nombre": "observaciones_generales",
-      "tipo": "rango",
-      "origen": {"hoja": "informacion", "rango": "A159:AM165"},
-      "destino": {"hoja": "datos_generales", "celdas": ["A502"] }
-    },
-    {
-      "nombre": "ingreso",
-      "tipo": "rango",
-      "origen": {"hoja": "informacion", "rango": "B182:AJ219"},
-      "destino": {"hoja": "datos_generales", "celdas": ["A524"] }
-    },
-    {
-      "nombre": "torre",
-      "tipo": "imagen",
-      "origen": {"hoja": "informacion", "celda": "D297", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["K525"] }
-    },
-    {
-      "nombre": "shelter_i1",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "C126", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["J540"] }
-    },
-    {
-      "nombre": "shelter_i2",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I140", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["L540"] }
-    },
-    {
-      "nombre": "shelter_o1",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "C326", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["J540"] }
-    },
-    {
-      "nombre": "shelter_o2",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I340", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["L540"]}
-    },
-        {
-      "nombre": "cabina_cerrada",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "C490", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["A568"] }
-    },
-    {
-      "nombre": "cabina_abierta",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I490", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["C568"] }
-    },
-    {
-      "nombre": "equipos_existentes",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I516", "combinada": true},
-      "destino": {"hoja": "datos_generales" , "celdas": ["G568","C618"]}
-    },
-    {
-      "nombre": "power_plan",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I505", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["B618"]  }
-    },
-    {
-      "nombre": "cabina_cerrada2",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "C530", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["A586"] }
-    },
-    {
-      "nombre": "cabina_abierta2",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I542", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["C586"] }
-    },
-    {
-      "nombre": "equipos_existentes2",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I556", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["G586","J618"] }
-    },
-    {
-      "nombre": "power_plan2",
-      "tipo": "imagen",
-      "origen": {"hoja": "cabinas", "celda": "I544", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["G618"] }
-    },
-    {
-      "nombre": "clamps",
-      "tipo": "rango",
-      "origen": {"hoja": "torres", "rango": "E1894:V1899"},
-      "destino": {"hoja": "datos_generales", "celdas": ["G1044"] }
-    },
-        {
-      "nombre": "escalerilla_vertical",
-      "tipo": "imagen",
-      "origen": {"hoja": "torres", "celda": "F1914", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["G1055"] }
-    },
-        {
-      "nombre": "plano_clamps",
-      "tipo": "imagen",
-      "origen": {"hoja": "torres", "celda": "M1914", "combinada": true},
-      "destino": {"hoja": "datos_generales", "celdas": ["J1055"]}
-    },
-    {
-      "nombre": "barra_tierra_indoor",
-      "tipo": "rango",
-      "origen": {"hoja": "puesta_tierra", "rango": "A9:AJ29"},
-      "destino": {"hoja": "datos_generales", "celdas": ["B1090"]}
-    },
-    {
-      "nombre": "barra_tierra_outdoor",
-      "tipo": "rango",
-      "origen": {"hoja": "puesta_tierra", "rango": "A44:AJ64"},
-      "destino": {"hoja": "datos_generales", "celdas": ["B1107"] }
-    },
-    {
-      "nombre": "equipos_no_operativos_tabla",
-      "tipo": "rango",
-      "origen": {"hoja": "equipos", "rango": "C8:AJ23"},
-      "destino": {"hoja": "equipos_no_operativos", "celdas": ["B4"]}
-    },
-    {
-      "nombre": "equipos_no_operativos_fotos",
-      "tipo": "rango",
-      "origen": {"hoja": "equipos", "rango": "B25:AG37"},
-      "destino": {"hoja": "equipos_no_operativos", "celdas": ["B22"] }
-    }
-  ]
+  }
 }

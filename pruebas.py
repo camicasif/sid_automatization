@@ -281,22 +281,26 @@ class TSSProcessor:
                 excel.Quit()
 
     def generar_sid(self, plantilla_path, output_path):
-        """Genera el SID con los datos extraídos"""
+        """Genera el SID con los datos extraídos, soportando múltiples celdas destino"""
         print("\n=== GENERANDO SID ===")
         app = xw.App(visible=False)
 
         try:
             wb_sid = app.books.open(plantilla_path)
 
-            # 1. Insertar textos
+            # 1. Insertar textos (ahora soporta múltiples celdas destino)
             for elemento in self.config['elementos']:
                 if elemento['tipo'] == 'texto' and elemento['nombre'] in self.data['textos']:
                     sheet_index = self._get_sheet_index('sid', elemento['destino']['hoja'])
-                    wb_sid.sheets[sheet_index][elemento['destino']['celda']].value = self.data['textos'][
-                        elemento['nombre']]
-                    print(f"Texto '{elemento['nombre']}' insertado en {elemento['destino']['celda']}")
+                    sheet = wb_sid.sheets[sheet_index]
+                    valor = self.data['textos'][elemento['nombre']]
 
-            # 2. Insertar imágenes
+                    # Insertar el mismo valor en todas las celdas especificadas
+                    for celda in elemento['destino']['celdas']:
+                        sheet[celda].value = valor
+                        print(f"Texto '{elemento['nombre']}' insertado en {celda}")
+
+            # 2. Insertar imágenes/rangos (ya soporta múltiples celdas via _insertar_imagen)
             for elemento in self.config['elementos']:
                 if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in self.data['imagenes']:
                     self._insertar_imagen(wb_sid, elemento)
