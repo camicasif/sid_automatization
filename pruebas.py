@@ -202,7 +202,7 @@ class TSSProcessor:
             col_letter_start = openpyxl.utils.get_column_letter(min_col)
             col_letter_end = openpyxl.utils.get_column_letter(max_col)
 
-            print(f"\n🔍 Buscando imagen en rango: "
+            print(f"🔍 Buscando imagen {elemento['nombre']} en rango: "
                   f"{col_letter_start}{min_row}:{col_letter_end}{max_row} "
                   f"(Columnas {min_col}-{max_col}, Filas {min_row}-{max_row})")
 
@@ -222,7 +222,7 @@ class TSSProcessor:
                           f"Columna {img_left}, Fila {img_top}")
                     return img_path
 
-            print(f"⚠️ Imagen no encontrada en el rango especificado")
+            print(f"⚠️ Imagen {elemento['nombre']} no encontrada en el rango especificado")
             return None
 
         except Exception as e:
@@ -233,9 +233,9 @@ class TSSProcessor:
         """Encontrar rango combinado para la celda objetivo"""
         for merged_cell in sheet.merged_cells.ranges:  # Usar sheet en lugar de self.sheet_tss
             if target_cell.coordinate in merged_cell:
-                print(f"✅ Celda combinada encontrada: {merged_cell.coord}")
+                print(f"\n ✅ Celda combinada encontrada: {merged_cell.coord}")
                 return merged_cell
-        print(f"ℹ️ Celda no está combinada")
+        print(f"\n ℹ️ Celda no está combinada")
         return None
 
     def _get_expanded_range(self, target_cell, merged_range):
@@ -332,49 +332,48 @@ class TSSProcessor:
             ) from e
 
     def _insertar_imagen(self, wb_sid, elemento):
-        """Versión mejorada con manejo completo de errores"""
+        """Versión mejorada que soporta múltiples celdas destino"""
         try:
             nombre = elemento['nombre']
             print(f"\n=== Insertando imagen '{nombre}' ===")
 
-            # 1. Verificar existencia de la imagen (CON RUTA ABSOLUTA)
-            img_path = os.path.abspath(self.data['imagenes'].get(nombre))  # <- Único cambio necesario
+            # 1. Verificar existencia de la imagen
+            img_path = os.path.abspath(self.data['imagenes'].get(nombre))
             if not os.path.exists(img_path):
-                available = [os.path.abspath(os.path.join("capturas", f)) for f in os.listdir("capturas") if f.endswith('.png')]
+                available = [os.path.abspath(os.path.join("capturas", f)) for f in os.listdir("capturas") if
+                             f.endswith('.png')]
                 raise FileNotFoundError(
-                    f"Imagen no encontrada.\n"
-                    f"Buscada: {img_path}\n"
-                    f"Existentes: {available}"
-                )
+                    f"Imagen no encontrada.\nBuscada: {img_path}\nExistentes: {available}")
 
-            # Resto del método ORIGINAL (sin cambios)
+            # 2. Obtener hoja destino
             sheet_index = self._get_sheet_index('sid', elemento['destino']['hoja'])
             sheet = wb_sid.sheets[sheet_index]
             print(f"Hoja destino: {sheet.name} (índice {sheet.index})")
 
-            celda = elemento['destino']['celda']
-            rango = sheet.range(celda)
-            print(f"Rango destino: {rango.address} {img_path}")
+            # 3. Procesar TODAS las celdas destino
+            for celda in elemento['destino']['celdas']:
+                try:
+                    rango = sheet.range(celda)
+                    print(f"Insertando en celda: {rango.address}")
 
-            try:
-                picture = sheet.pictures.add(
-                    img_path,  # <- Ya usa la ruta absoluta
-                    left=rango.left,
-                    top=rango.top,
-                    width=None,
-                    height=None
-                )
-                print(f"✅ Imagen insertada")
-                return picture
-            except Exception as e:
-                print(f"⚠️ Intento fallido: {type(e).__name__} - {str(e)}")
+                    picture = sheet.pictures.add(
+                        img_path,
+                        left=rango.left,
+                        top=rango.top,
+                        width=None,  # Mantiene tamaño original
+                        height=None
+                    )
+                    print(f"✅ Imagen insertada en {celda}")
+
+                except Exception as e:
+                    print(f"⚠️ Error insertando en {celda}: {type(e).__name__} - {str(e)}")
+
+            return True
 
         except Exception as e:
             print(f"\n❌ ERROR insertando '{nombre}': {type(e).__name__}")
             print(f"Mensaje: {str(e)}")
-            print("\n=== DEBUG ===")
-            print("Ruta absoluta fallida:", img_path)
-            return None
+            return False
 
 # Uso del sistema
 if __name__ == "__main__":
