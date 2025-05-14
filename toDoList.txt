@@ -2,7 +2,6 @@ Que algunos rangos sean opcionales, buscar si tienen fotos, si no tienen que sea
 llevar todas las fotos al fondo
 Hacer las diapositivas y pegarlas en la pagina 8
 _check CADA CAPTURA DEBERIA TENER SU PROPIO IDENTIFICADOR COMO ARCHIVO
-_check AGRUPARLO POR CARPETA NOMBRE DE SITIO
 
 Para eso lo primero que se debe sacar es el nombre, despues lo demas
 

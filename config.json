@@ -371,7 +371,7 @@
       "destino": {
         "hoja": "datos_generales",
         "celdas": [
-          "B1130"
+          "A1130"
         ]
       }
     },
@@ -391,7 +391,7 @@
         "alto": 8
       }
     },
-        {
+    {
       "nombre": "equipos_no_operativos_especificacion",
       "tipo": "rango",
       "origen": {
@@ -401,10 +401,10 @@
       "destino": {
         "hoja": "equipos_no_operativos",
         "celdas": [
-          "F16"
+          "G14"
         ],
         "ancho": 20,
-        "alto": 5
+        "alto": 3
       }
     },
     {
@@ -417,10 +417,10 @@
       "destino": {
         "hoja": "equipos_no_operativos",
         "celdas": [
-          "B22"
+          "A22"
         ],
         "ancho": 20,
-        "alto": 10
+        "alto": 8
       }
     }
   ],
@@ -437,7 +437,8 @@
       "portada": 4,
       "ubicacion_sitio": 5,
       "datos_generales": 6,
-      "equipos_no_operativos": 7
+      "equipos_no_operativos": 7,
+      "antenas": 9
     }
   },
   "nombre_sid": {

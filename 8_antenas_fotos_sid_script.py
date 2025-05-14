@@ -11,7 +11,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_PARAGRAPH_ALIGNMENT
 import copy
-file_name = 'Resultados'
+file_name = 'fotos_antenas'
 OFFSET_BUSQUEDA = 12  # Ajusta según necesidad
 
 def generar_presentacion():
@@ -224,6 +224,6 @@ def procesar_excels():
 if __name__ == "__main__":
     procesar_excels()
     generar_presentacion()
-    print("\nProceso completado. Estructura generada en 'Resultados/'")
+    print("\nProceso completado. Estructura generada en 'fotos_antenas/'")
 
 

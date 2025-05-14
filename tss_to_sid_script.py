@@ -50,8 +50,11 @@ class TSSProcessor:
     def __init__(self, config_path='config.json'):
         self.config = self._cargar_configuracion(config_path)
         self.data = {'textos': {}, 'imagenes': {}}
-        self.capturas_dir = None
+        self.resultados_dir = None
         self.nombre_sid = None
+        self.sid_name = None  # Parte del nombre (ej: "JuanPerez")
+        self.sid_id = None    # Parte del ID (ej: "12345")
+        self.sid_name_id = None
 
     # Configuración y helpers básicos
 
@@ -61,6 +64,10 @@ class TSSProcessor:
 
     def _obtener_hoja_indice(self, workbook_type, sheet_name):
         return self.config['hojas'][workbook_type][sheet_name]
+
+    def _limpiar_texto(self, texto):
+        """Limpia texto para usar en nombres de archivos"""
+        return ''.join(c for c in texto if c not in '\\/:*?"<>|').replace(" ", "_")
 
     def _generar_nombre_sid(self, tss_path):
         """Genera el nombre leyendo directamente del TSS según la configuración"""
@@ -105,9 +112,9 @@ class TSSProcessor:
             nombre_sid = self._generar_nombre_sid(tss_path)
 
         self.nombre_sid = nombre_sid
-        self.capturas_dir = os.path.join("capturas", os.path.splitext(nombre_sid)[0])
-        os.makedirs(self.capturas_dir, exist_ok=True)
-        print(f"📁 Directorio de capturas creado: {self.capturas_dir}")
+        self.resultados_dir = os.path.join("resultados", os.path.splitext(nombre_sid)[0])
+        os.makedirs(self.resultados_dir, exist_ok=True)
+        print(f"📁 Directorio de resultados creado: {self.resultados_dir}")
 
         wb_tss = openpyxl.load_workbook(tss_path, data_only=True)
 
@@ -162,7 +169,7 @@ class TSSProcessor:
                 self.data['imagenes'][nombre] = ruta_imagen
 
     def capturar_multiples_rangos(self, rangos_dict):
-        """Captura múltiples rangos de hojas específicas y guarda en carpeta capturas"""
+        """Captura múltiples rangos de hojas específicas y guarda en carpeta resultados"""
         excel = None
         resultados = {}
 
@@ -175,7 +182,7 @@ class TSSProcessor:
             cerrar_dialogos_office()
 
             for nombre, config in rangos_dict.items():
-                output_path = os.path.join(self.capturas_dir, f"{nombre}.png")
+                output_path = os.path.join(self.resultados_dir, f"{nombre}.png")
 
                 # Obtener índice de hoja desde la configuración
                 sheet_index = self._obtener_hoja_indice('tss', config['hoja']) + 1  # Excel usa base 1
@@ -237,7 +244,7 @@ class TSSProcessor:
                 img_left = img.anchor._from.col + 1
 
                 if (min_row <= img_top <= max_row) and (min_col <= img_left <= max_col):
-                    img_path = os.path.join(self.capturas_dir, f"{elemento['nombre']}.png")
+                    img_path = os.path.join(self.resultados_dir, f"{elemento['nombre']}.png")
                     image_bytes = img._data()
                     image = Image.open(io.BytesIO(image_bytes))
                     image.save(img_path)
@@ -423,12 +430,12 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Paso 1: Procesar TSS (extraer datos)
-    tss_files = [f for f in os.listdir("TSS_PRUEBA") if f.endswith(('.xls', '.xlsx', '.xlsm'))]
+    tss_files = [f for f in os.listdir("TSS") if f.endswith(('.xls', '.xlsx', '.xlsm'))]
     if not tss_files:
         print("❌ No se encontraron archivos TSS")
         exit()
 
-    tss_path = os.path.join("TSS_PRUEBA", tss_files[0])
+    tss_path = os.path.join("TSS", tss_files[0])
     processor.tss_path = tss_path
 
     nombre_sid = processor._generar_nombre_sid(tss_path)
