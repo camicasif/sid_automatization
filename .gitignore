@@ -2,10 +2,12 @@
 # Ignorar archivos específicos (por si acaso)
 .idea/
 *.xlsm
-*.xlsx
 *.pptx
+TSS/
+WEEK20/
 Resultados/
 capturas/
 fotos_antenas/
 resultados/
 SIDs/
+~$SID MIC BO 3YPLAN 2024_Name_ID_RevP.xlsx
