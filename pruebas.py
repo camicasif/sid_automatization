@@ -473,7 +473,9 @@ class TSSBatchProcessor:
             #     if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in tss_instance.data['imagenes']:
             #         self._insertar_imagen(wb_sid,tss_instance, elemento)
 
-            self._insertar_fotos_antenas(wb_sid, tss_instance)
+            # self._insertar_fotos_antenas(wb_sid, tss_instance)
+            self._actualizar_titulos_antenas(wb_sid, tss_instance)
+            self._actualizar_sectores_con_tecnologias(wb_sid, tss_instance)
 
             # Guardar el resultado
             wb_sid.save(output_path)
@@ -729,6 +731,7 @@ class TSSBatchProcessor:
             if wb:
                 wb.close()
 
+
     def _insertar_fotos_antenas(self, wb_sid, tss_instance):
         """Inserta las fotos de las antenas generando títulos individuales"""
         try:
@@ -806,6 +809,147 @@ class TSSBatchProcessor:
             print(f"❌ Error: {str(e)}")
             return {}
 
+    def _actualizar_titulos_antenas(self, wb_sid, tss_instance):
+        """Método dedicado para actualizar títulos de antenas en TextBox"""
+        try:
+            print("\n=== ACTUALIZANDO TÍTULOS DE ANTENAS ===")
+            sheet = wb_sid.sheets[self._obtener_hoja_indice('sid', 'antenas')]
+
+            # 1. Obtener todos los TextBox de antenas disponibles
+            textboxes_antenas = self._obtener_textboxes_antenas(sheet)
+            if not textboxes_antenas:
+                print("ℹ️ No se encontraron TextBox de antenas para actualizar")
+                return
+
+            # 2. Procesar cada carpeta de antena existente
+            for antena_num, textbox in textboxes_antenas.items():
+                antena_folder = os.path.join(tss_instance.resultados_dir, f"Antena_{antena_num}")
+
+                if not os.path.exists(antena_folder):
+                    print(f"⏩ Saltando Antena {antena_num} - Carpeta no encontrada")
+                    continue
+
+                # 3. Extraer tecnologías de los archivos PNG
+                tecnologias = set()
+                for sector in ['a', 'b', 'c']:
+                    patron = os.path.join(antena_folder, f"Antena_{antena_num}_Sector_{sector}*.png")
+
+                    for img_path in glob.glob(patron):
+                        if '(' in img_path and ')' in img_path:
+                            tech_part = img_path.split('(')[1].split(')')[0]
+                            tecnologias.update(t.strip() for t in tech_part.replace('-', ',').split(',') if t.strip())
+
+                # 4. Generar y actualizar título
+                if tecnologias:
+                    titulo = " + ".join(sorted(tecnologias))
+                    if self._actualizar_textbox_antena(textbox, titulo):
+                        print(f"✅ Antena {antena_num}: Actualizado título - {titulo}")
+                else:
+                    print(f"⚠️ Antena {antena_num}: No se encontraron tecnologías")
+
+            # 5. Verificación: Mostrar todos los TextBox actualizados
+            print("\n=== VERIFICACIÓN DE TEXTOS ACTUALIZADOS ===")
+            self._imprimir_textboxes_actualizados(sheet)
+
+        except Exception as e:
+            print(f"❌ Error actualizando títulos: {str(e)}")
+
+    # Métodos auxiliares (ya existentes)
+    def _obtener_textboxes_antenas(self, sheet):
+        """Recopila TextBox de antenas en grupos (8.1, 8.2, etc.)"""
+        textboxes = {}
+        for shape in sheet.shapes:
+            if shape.type == 'group':
+                try:
+                    for sub_shape in shape.api.GroupItems:
+                        if sub_shape.Type == 17:  # TextBox
+                            texto = sub_shape.TextFrame2.TextRange.Text
+                            match = re.search(r"8\.(\d+)", texto)
+                            if match:
+                                textboxes[int(match.group(1))] = sub_shape
+                except Exception as e:
+                    print(f"⚠️ Error en grupo {shape.name}: {str(e)}")
+        return textboxes
+
+    def _actualizar_textbox_antena(self, textbox, titulo):
+        try:
+            texto = textbox.TextFrame2.TextRange.Text
+            if "TECH" in texto:
+                nuevo_texto = texto.replace("TECH", titulo)
+                textbox.TextFrame2.TextRange.Text = nuevo_texto
+                return True
+            return False
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return False
+
+    def _imprimir_textboxes_actualizados(self, sheet):
+        """Imprime el contenido de todos los TextBox tipo 17 en grupos"""
+        for shape in sheet.shapes:
+            if shape.type == 'group':
+                try:
+                    print(f"\n🔍 Grupo: {shape.name}")
+                    for i, sub_shape in enumerate(shape.api.GroupItems):
+                        if sub_shape.Type == 17:  # TextBox
+                            texto = sub_shape.TextFrame2.TextRange.Text.strip()
+                            print(f"  📝 TextBox {i + 1}:")
+                            print(f"     {texto}")
+                except Exception as e:
+                    print(f"⚠️ Error leyendo grupo {shape.name}: {str(e)}")
+
+    def _actualizar_sectores_con_tecnologias(self, wb_sid, tss_instance):
+        """Actualiza los TextBox tipo 1 (sectores) con tecnologías correspondientes"""
+        try:
+            print("\n=== ACTUALIZANDO SECTORES CON TECNOLOGÍAS ===")
+            sheet = wb_sid.sheets[self._obtener_hoja_indice('sid', 'antenas')]
+
+            # Procesar cada grupo en la hoja
+            for shape in sheet.shapes:
+                if shape.type == 'group':
+                    try:
+                        # Buscar TextBox de sectores (tipo 1) en el grupo
+                        sectores = []
+                        for sub_shape in shape.api.GroupItems:
+                            if sub_shape.Type == 1:  # TextBox tipo 1
+                                texto = sub_shape.TextFrame2.TextRange.Text.strip()
+                                if texto.startswith("SECTOR"):
+                                    sectores.append(sub_shape)
+
+                        # Si encontramos los 3 sectores
+                        if len(sectores) == 3:
+                            # Extraer número de antena del grupo (ej: "Group 10" -> antena 1)
+                            try:
+                                antena_num = int(re.search(r'\d+', shape.name).group()) % 10
+                                if antena_num == 0:
+                                    antena_num = 10
+                            except:
+                                continue
+
+                            # Procesar cada sector
+                            for i, sector_shape in enumerate(sectores, 1):
+                                sector_folder = os.path.join(tss_instance.resultados_dir, f"Antena_{antena_num}")
+                                patron = os.path.join(sector_folder, f"Antena_{antena_num}_Sector_{i}*.png")
+
+                                # Extraer tecnologías de los archivos
+                                tecnologias = set()
+                                for img_path in glob.glob(patron):
+                                    if '(' in img_path and ')' in img_path:
+                                        tech_part = img_path.split('(')[1].split(')')[0]
+                                        tecnologias.update(
+                                            t.strip() for t in tech_part.replace('-', ',').split(',') if t.strip())
+
+                                # Actualizar texto del sector
+                                if tecnologias:
+                                    texto_original = sector_shape.TextFrame2.TextRange.Text.strip()
+                                    nuevo_texto = f"{texto_original}\n({' + '.join(sorted(tecnologias))})"
+                                    sector_shape.TextFrame2.TextRange.Text = nuevo_texto
+                                    print(f"✅ Antena {antena_num} - Sector {i}: {nuevo_texto}")
+
+                    except Exception as e:
+                        print(f"⚠️ Error procesando grupo {shape.name}: {str(e)}")
+
+        except Exception as e:
+            print(f"❌ Error general: {str(e)}")
 # Uso del sistema
 if __name__ == "__main__":
     processor = TSSBatchProcessor('config.json')
