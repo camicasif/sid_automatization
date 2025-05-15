@@ -30,3 +30,21 @@ Para eso lo primero que se debe sacar es el nombre, despues lo demas
         finally:
             if excel:
                 excel.Quit()
+
+
+
+
+
+
+Por hacer
+tengo 4 carpetas, Antena_1, Antena_2, Antena_3, Antena_4
+eliminar las que esten vacias
+
+ recolectar los nombres de las tecnologias por carpeta
+ cada antena puede tener mas de una tecnologia, separadas por guion "-" ejemplo WCDMA 850-LTE AWS ["WCDMA 850","LTE AWS"]
+ recopilar todas las tecnologias de todas las antenas sin repetidos
+ colocar todas estas tecnologias anidadas por un " + " menos el ultimo en un string llamado titulo
+
+ imprimir el texto en consola por carpeta
+
+recolectar todos los grupos que hay en una lista

@@ -1,7 +1,12 @@
+import glob
 import io
 import os
 import json
+import re
+import shutil
+import traceback
 import warnings
+from collections import defaultdict
 from datetime import timedelta
 
 import win32com
@@ -12,6 +17,8 @@ import win32com.client as win32
 import win32gui
 import win32con
 import time
+
+from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl.reader.drawings')
@@ -48,6 +55,8 @@ def cerrar_dialogos_office():
             pass
     return dialogs_closed
 
+
+
 class TSSInstance:
     """Representa un archivo TSS individual con sus metadatos"""
     def __init__(self, file_path,config_path='config.json'):
@@ -76,6 +85,7 @@ class TSSInstance:
 
     def _leer_celda(self, wb, sheet_config_name, celda):
 
+        global sheet_index
         try:
             # Obtener el índice de la hoja desde la configuración
             sheet_index = self._obtener_hoja_indice('tss', sheet_config_name)
@@ -109,6 +119,7 @@ def _cargar_configuracion(config_path):
     with open(config_path, encoding='utf-8') as f:
         return json.load(f)
 
+OFFSET_BUSQUEDA = 12
 
 class TSSBatchProcessor:
     """Procesa múltiples archivos TSS en lote"""
@@ -194,8 +205,13 @@ class TSSBatchProcessor:
         os.makedirs(output_folder, exist_ok=True)
         output_path = os.path.join(output_folder, nombre_archivo)
 
+        tss_instance.resultados_dir = os.path.join("resultados", f"{tss_instance.name}_{tss_instance.id}")
+        os.makedirs(tss_instance.resultados_dir, exist_ok=True)
+
         # 2. Procesar contenido (adaptar tus métodos actuales)
-        self._extraer_datos(tss_instance)
+        # self._extraer_datos(tss_instance)
+
+        self.procesar_fotos_antenas(tss_instance)
 
         self._generar_sid(
             tss_instance,
@@ -219,8 +235,6 @@ class TSSBatchProcessor:
         wb_tss = None
         try:
             wb_tss = openpyxl.load_workbook(tss_instance.file_path, data_only=True)
-            tss_instance.resultados_dir = os.path.join("resultados", f"{tss_instance.name}_{tss_instance.id}")
-            os.makedirs(tss_instance.resultados_dir, exist_ok=True)
 
             # Organizar elementos por tipo para procesamiento eficiente
             elementos_por_tipo = {
@@ -443,21 +457,24 @@ class TSSBatchProcessor:
             wb_sid = app.books.open(plantilla_path)
 
             # 1. Insertar textos (ahora soporta múltiples celdas destino)
-            for elemento in self.config['elementos']:
-                if elemento['tipo'] == 'texto' and elemento['nombre'] in tss_instance.data['textos']:
-                    sheet_index = self._obtener_hoja_indice('sid', elemento['destino']['hoja'])
-                    sheet = wb_sid.sheets[sheet_index]
-                    valor = tss_instance.data['textos'][elemento['nombre']]
+            # for elemento in self.config['elementos']:
+            #     if elemento['tipo'] == 'texto' and elemento['nombre'] in tss_instance.data['textos']:
+            #         sheet_index = self._obtener_hoja_indice('sid', elemento['destino']['hoja'])
+            #         sheet = wb_sid.sheets[sheet_index]
+            #         valor = tss_instance.data['textos'][elemento['nombre']]
+            #
+            #         # Insertar el mismo valor en todas las celdas especificadas
+            #         for celda in elemento['destino']['celdas']:
+            #             sheet[celda].value = valor
+            #             print(f"Texto '{elemento['nombre']}' insertado en {celda}")
 
-                    # Insertar el mismo valor en todas las celdas especificadas
-                    for celda in elemento['destino']['celdas']:
-                        sheet[celda].value = valor
-                        print(f"Texto '{elemento['nombre']}' insertado en {celda}")
+            # # 2. Insertar imágenes/rangos (ya soporta múltiples celdas via _insertar_imagen)
+            # for elemento in self.config['elementos']:
+            #     if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in tss_instance.data['imagenes']:
+            #         self._insertar_imagen(wb_sid,tss_instance, elemento)
 
-            # 2. Insertar imágenes/rangos (ya soporta múltiples celdas via _insertar_imagen)
-            for elemento in self.config['elementos']:
-                if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in tss_instance.data['imagenes']:
-                    self._insertar_imagen(wb_sid,tss_instance, elemento)
+            self._insertar_fotos_antenas(wb_sid, tss_instance)
+
             # Guardar el resultado
             wb_sid.save(output_path)
             print(f"\n✅ SID generado correctamente en: {os.path.abspath(output_path)}")
@@ -568,6 +585,226 @@ class TSSBatchProcessor:
             print(f"Mensaje: {str(e)}")
             return False
 
+    def obtener_tecnologias(nombre_archivo):
+        if '(' in nombre_archivo and ')' in nombre_archivo:
+            tech_part = nombre_archivo.split('(')[-1].split(')')[0]
+            return tech_part.replace('-', ' + ')
+        return ""
+
+    def procesar_fotos_antenas(self, tss_instance):
+        """Procesa las fotos de antenas para una instancia TSS"""
+        try:
+            print("\n=== PROCESANDO FOTOS DE ANTENAS ===")
+
+            # Crear subcarpeta para este TSS si no existe
+            proyecto_folder = os.path.join("resultados", f"{tss_instance.name}_{tss_instance.id}")
+            os.makedirs(proyecto_folder, exist_ok=True)
+
+            # Configuración de sectores y antenas
+            lista_sectores = ['a', 'b', 'c']
+            lista_antenas = [1, 2, 3, 4]
+
+            self.buscar_antenas_por_sectores(
+                tss_instance.file_path,
+                lista_sectores,
+                lista_antenas,
+                proyecto_folder
+            )
+
+        except Exception as e:
+            print(f"⚠️ Error procesando fotos de antenas: {str(e)}")
+
+    def buscar_antenas_por_sectores(self, excel_path, lista_sectores, lista_antenas, output_folder):
+        """Versión adaptada del método original"""
+        global frase_busqueda
+        wb = None
+        try:
+            wb = load_workbook(excel_path, data_only=True)
+
+            # Usar índice de hoja desde configuración
+            sheet_index = self._obtener_hoja_indice('tss', 'torres')
+            sheet = wb.worksheets[sheet_index]
+
+            imagenes_dict = {}
+            for img in sheet._images:
+                pos = img.anchor._from
+                excel_row = pos.row + 1
+                excel_col = pos.col + 1
+                imagenes_dict[(excel_row, excel_col)] = img
+
+            merged_ranges = list(sheet.merged_cells.ranges)
+
+            # Crear carpetas Antena_X dentro del proyecto
+            for antena in lista_antenas:
+                folder_path = os.path.join(output_folder, f"Antena_{antena}")
+                os.makedirs(folder_path, exist_ok=True)
+
+            # Buscar todas las combinaciones
+            for sector in lista_sectores:
+                for antena in lista_antenas:
+                    try:
+                        frase_busqueda = f"foto general de la antena {antena} sector {sector}"
+                        print(f"\nBuscando: {frase_busqueda}")
+
+                        # Buscar celda con texto
+                        target_cell = None
+                        descripcion_tecnica = None
+
+                        for row in sheet.iter_rows():
+                            for cell in row:
+                                if cell.value and frase_busqueda in str(cell.value).lower():
+                                    target_cell = cell
+                                    break
+                            if target_cell:
+                                celda_encontrada = f"{get_column_letter(target_cell.column)}{target_cell.row}"
+                                print(f"Texto encontrado en la celda: {celda_encontrada}")
+
+                                # Extraer descripción técnica
+                                texto_completo = str(target_cell.value)
+                                if ":" in texto_completo:
+                                    _, descripcion = texto_completo.split(":", 1)
+                                    descripcion_tecnica = descripcion.strip()[:30]
+                                    descripcion_tecnica = descripcion_tecnica.replace("/", "-").replace("\\", "-")
+                                break
+
+                        if not target_cell:
+                            print(f"No encontrado: {frase_busqueda}")
+                            continue
+
+                        # Detectar celdas combinadas
+                        merged_range = None
+                        for merged in merged_ranges:
+                            if (merged.min_row <= target_cell.row <= merged.max_row and
+                                    merged.min_col <= target_cell.column <= merged.max_col):
+                                merged_range = merged
+                                break
+
+                        # Definir rango de búsqueda
+                        rango_filas = range(max(1, target_cell.row - OFFSET_BUSQUEDA), target_cell.row)
+                        start_col = merged_range.min_col if merged_range else target_cell.column
+                        end_col = merged_range.max_col if merged_range else target_cell.column
+                        rango_columnas = range(start_col, end_col + 1)
+
+                        # Buscar imagen en el diccionario
+                        imagen_encontrada = False
+                        for fila in rango_filas:
+                            for col in rango_columnas:
+                                if (fila, col) in imagenes_dict:
+                                    img = imagenes_dict[(fila, col)]
+                                    folder = os.path.join(output_folder, f"Antena_{antena}")
+
+                                    # Nombre del archivo
+                                    if descripcion_tecnica:
+                                        filename = f"Antena_{antena}_Sector_{sector}_({descripcion_tecnica}).png"
+                                    else:
+                                        filename = f"Antena_{antena}_Sector_{sector}.png"
+                                    output_path = os.path.join(folder, filename)
+
+                                    try:
+                                        img_data = img._data()
+                                        with open(output_path, "wb") as f:
+                                            f.write(img_data)
+
+                                        # Verificar imagen
+                                        with Image.open(output_path) as img_pil:
+                                            img_pil.verify()
+
+                                        print(f"Imagen guardada en: {output_path}")
+                                        imagen_encontrada = True
+                                        break
+
+                                    except Exception as e:
+                                        print(f"Error guardando imagen: {str(e)}")
+
+                            if imagen_encontrada:
+                                break
+
+                        if not imagen_encontrada:
+                            print(f"¡Imagen no encontrada en el rango especificado!")
+
+                    except Exception as e:
+                        print(f"Error procesando {frase_busqueda}: {str(e)}")
+                        continue
+        finally:
+            if wb:
+                wb.close()
+
+    def _insertar_fotos_antenas(self, wb_sid, tss_instance):
+        """Inserta las fotos de las antenas generando títulos individuales"""
+        try:
+            print("\n=== INSERTANDO FOTOS DE ANTENAS ===")
+            resultados_dir = os.path.abspath(tss_instance.resultados_dir)
+
+            if not os.path.exists(resultados_dir):
+                print(f"❌ Carpeta no encontrada: {resultados_dir}")
+                return {}
+
+            # Obtener hoja de trabajo
+            sheet = wb_sid.sheets[self._obtener_hoja_indice('sid', 'antenas')]
+
+            # Configuración de imágenes
+            width = 10 * 28.35  # 10 cm a puntos
+            height = 15 * 28.35  # 15 cm a puntos
+
+            posiciones_base = {
+                1: ("C14", "H14", "M14"),
+                2: ("C64", "H64", "M64"),
+                3: ("C114", "H114", "M114"),
+                4: ("C164", "H164", "M164")
+            }
+
+            titulos_antenas = {}
+
+            for antena in range(1, 5):
+                antena_folder = os.path.join(resultados_dir, f"Antena_{antena}")
+                if not os.path.exists(antena_folder):
+                    continue
+
+                print(f"\n📡 Procesando Antena {antena}")
+                tecnologias = set()
+
+                # Procesar cada sector
+                for sector_idx, sector in enumerate(['a', 'b', 'c']):
+                    celda = posiciones_base[antena][sector_idx]
+                    patron = os.path.join(antena_folder, f"Antena_{antena}_Sector_{sector}*.png")
+
+                    for img_path in glob.glob(patron):
+                        # Extraer tecnologías del nombre de archivo
+                        if '(' in img_path and ')' in img_path:
+                            tech_part = img_path.split('(')[1].split(')')[0]
+                            for tech in [t.strip() for t in tech_part.replace('-', ',').split(',') if t.strip()]:
+                                tecnologias.add(tech)
+
+                        # Insertar imagen
+                        try:
+                            with Image.open(img_path) as img:
+                                img.verify()
+                                rango = sheet.range(celda)
+                                picture = sheet.pictures.add(
+                                    img_path,
+                                    left=rango.left + (rango.width - width) / 2,
+                                    top=rango.top + (rango.height - height) / 2,
+                                    width=width,
+                                    height=height
+                                )
+                                print(f"✅ Insertada {os.path.basename(img_path)} en {celda}")
+                        except Exception as e:
+                            print(f"❌ Error con {img_path}: {str(e)}")
+
+                # Generar título para esta antena
+                if tecnologias:
+                    tech_list = sorted(tecnologias)
+                    titulo = " + ".join(tech_list[:-1] + [tech_list[-1]] if len(tech_list) > 1 else tech_list)
+                    titulos_antenas[antena] = titulo[0] if isinstance(titulo, list) else titulo
+                    print(f"🔹 Tecnologías Antena {antena}: {titulos_antenas[antena]}")
+                else:
+                    titulos_antenas[antena] = "Sin tecnologías"
+
+            return titulos_antenas
+
+        except Exception as e:
+            print(f"❌ Error: {str(e)}")
+            return {}
 
 # Uso del sistema
 if __name__ == "__main__":
