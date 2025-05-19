@@ -209,7 +209,7 @@ class TSSBatchProcessor:
         os.makedirs(tss_instance.resultados_dir, exist_ok=True)
 
         # 2. Procesar contenido (adaptar tus métodos actuales)
-        # self._extraer_datos(tss_instance)
+        self._extraer_datos(tss_instance)
 
         self.procesar_fotos_antenas(tss_instance)
 
@@ -457,21 +457,21 @@ class TSSBatchProcessor:
             wb_sid = app.books.open(plantilla_path)
 
             # 1. Insertar textos (ahora soporta múltiples celdas destino)
-            # for elemento in self.config['elementos']:
-            #     if elemento['tipo'] == 'texto' and elemento['nombre'] in tss_instance.data['textos']:
-            #         sheet_index = self._obtener_hoja_indice('sid', elemento['destino']['hoja'])
-            #         sheet = wb_sid.sheets[sheet_index]
-            #         valor = tss_instance.data['textos'][elemento['nombre']]
-            #
-            #         # Insertar el mismo valor en todas las celdas especificadas
-            #         for celda in elemento['destino']['celdas']:
-            #             sheet[celda].value = valor
-            #             print(f"Texto '{elemento['nombre']}' insertado en {celda}")
+            for elemento in self.config['elementos']:
+                if elemento['tipo'] == 'texto' and elemento['nombre'] in tss_instance.data['textos']:
+                    sheet_index = self._obtener_hoja_indice('sid', elemento['destino']['hoja'])
+                    sheet = wb_sid.sheets[sheet_index]
+                    valor = tss_instance.data['textos'][elemento['nombre']]
 
-            # # 2. Insertar imágenes/rangos (ya soporta múltiples celdas via _insertar_imagen)
-            # for elemento in self.config['elementos']:
-            #     if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in tss_instance.data['imagenes']:
-            #         self._insertar_imagen(wb_sid,tss_instance, elemento)
+                    # Insertar el mismo valor en todas las celdas especificadas
+                    for celda in elemento['destino']['celdas']:
+                        sheet[celda].value = valor
+                        print(f"Texto '{elemento['nombre']}' insertado en {celda}")
+
+            # 2. Insertar imágenes/rangos (ya soporta múltiples celdas via _insertar_imagen)
+            for elemento in self.config['elementos']:
+                if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in tss_instance.data['imagenes']:
+                    self._insertar_imagen(wb_sid,tss_instance, elemento)
 
             self._insertar_fotos_antenas(wb_sid, tss_instance)
             self._actualizar_titulos_antenas(wb_sid, tss_instance)
@@ -544,7 +544,7 @@ class TSSBatchProcessor:
 
                     # Calcular posición centrada
                     left = rango.left + 5
-                    top = rango.top + 5
+                    top = rango.top + 70
                     # Insertar imagen
                     picture = sheet.pictures.add(
                         img_path,
@@ -554,26 +554,22 @@ class TSSBatchProcessor:
                         height=height
                     )
 
-                    # picture.api.ShapeRange.ZOrder(win32com.client.constants.msoSendToBack)
-                    #
-                    # # Opcional: Bloquear posición y tamaño
-                    # picture.api.Placement = 1
 
                     # # Mantener relación de aspecto si solo se especifica una dimensión
-                    # if width is not None and height is None:
-                    #     # Mantener relación de aspecto basado en el ancho
-                    #     img = Image.open(img_path)
-                    #     aspect_ratio = img.height / img.width
-                    #     picture.height = width * aspect_ratio
-                    #     # Recalcular posición vertical después de ajustar altura
-                    #     picture.top = rango.top + (rango.height - picture.height) / 2
-                    # elif height is not None and width is None:
-                    #     # Mantener relación de aspecto basado en el alto
-                    #     img = Image.open(img_path)
-                    #     aspect_ratio = img.width / img.height
-                    #     picture.width = height * aspect_ratio
-                    #     # Recalcular posición horizontal después de ajustar ancho
-                    #     picture.left = rango.left + (rango.width - picture.width) / 2
+                    if width is not None and height is None:
+                        # Mantener relación de aspecto basado en el ancho
+                        img = Image.open(img_path)
+                        aspect_ratio = img.height / img.width
+                        picture.height = width * aspect_ratio
+                        # Recalcular posición vertical después de ajustar altura
+                        picture.top = rango.top + (rango.height - picture.height) / 2
+                    elif height is not None and width is None:
+                        # Mantener relación de aspecto basado en el alto
+                        img = Image.open(img_path)
+                        aspect_ratio = img.width / img.height
+                        picture.width = height * aspect_ratio
+                        # Recalcular posición horizontal después de ajustar ancho
+                        picture.left = rango.left + (rango.width - picture.width) / 2
 
                     print(f"✅ Imagen insertada en {celda} - Tamaño: {width or 'auto'}x{height or 'auto'}")
 
@@ -750,13 +746,14 @@ class TSSBatchProcessor:
             height = 14 * 28.35  # 15 cm a puntos
 
             posiciones_base = {
-                1: ("B10", "G10", "L10"),
-                2: ("C64", "H64", "M64"),
-                3: ("C114", "H114", "M114"),
-                4: ("C164", "H164", "M164")
+                1: ("B20", "G20", "L20"),
+                2: ("C74", "H74", "M74"),
+                3: ("C124", "H124", "M124"),
+                4: ("C174", "H174", "M174")
             }
 
             titulos_antenas = {}
+            antenas_con_sectores_diferentes = []
 
             for antena in range(1, 5):
                 antena_folder = os.path.join(resultados_dir, f"Antena_{antena}")
@@ -764,19 +761,23 @@ class TSSBatchProcessor:
                     continue
 
                 print(f"\n📡 Procesando Antena {antena}")
-                tecnologias = set()
+                tecnologias_por_sector = []
+                tecnologias_totales = set()
 
                 # Procesar cada sector
                 for sector_idx, sector in enumerate(['a', 'b', 'c']):
                     celda = posiciones_base[antena][sector_idx]
                     patron = os.path.join(antena_folder, f"Antena_{antena}_Sector_{sector}*.png")
 
+                    sector_tecnologias = set()
+
                     for img_path in glob.glob(patron):
                         # Extraer tecnologías del nombre de archivo
                         if '(' in img_path and ')' in img_path:
                             tech_part = img_path.split('(')[1].split(')')[0]
                             for tech in [t.strip() for t in tech_part.replace('-', ',').split(',') if t.strip()]:
-                                tecnologias.add(tech)
+                                sector_tecnologias.add(tech)
+                                tecnologias_totales.add(tech)
 
                         # Insertar imagen
                         try:
@@ -793,21 +794,55 @@ class TSSBatchProcessor:
                                 print(f"✅ Insertada {os.path.basename(img_path)} en {celda}")
                         except Exception as e:
                             print(f"❌ Error con {img_path}: {str(e)}")
+                    tecnologias_por_sector.append(sector_tecnologias)
+
+                sectores_diferentes = False
+                if len(tecnologias_por_sector) > 1:
+                    primer_sector = tecnologias_por_sector[0]
+                    for sector_tech in tecnologias_por_sector[1:]:
+                        if sector_tech != primer_sector:
+                            sectores_diferentes = True
+                            break
+
+                if sectores_diferentes:
+                    print(f"🔴 Antena {antena} tiene sectores con tecnologías diferentes")
+                    antenas_con_sectores_diferentes.append(antena)
+                else:
+                    print(f"🟢 Antena {antena} tiene sectores con las mismas tecnologías")
 
                 # Generar título para esta antena
-                if tecnologias:
-                    tech_list = sorted(tecnologias)
+                if tecnologias_totales:
+                    tech_list = sorted(tecnologias_totales)
                     titulo = " + ".join(tech_list[:-1] + [tech_list[-1]] if len(tech_list) > 1 else tech_list)
                     titulos_antenas[antena] = titulo[0] if isinstance(titulo, list) else titulo
                     print(f"🔹 Tecnologías Antena {antena}: {titulos_antenas[antena]}")
                 else:
                     titulos_antenas[antena] = "Sin tecnologías"
 
+            if antenas_con_sectores_diferentes:
+                print("\n=== ANTENAS CON SECTORES DIFERENTES DETECTADAS ===")
+                print(f"Antenas a actualizar: {', '.join(map(str, antenas_con_sectores_diferentes))}")
+                self._actualizar_sectores_con_tecnologias(wb_sid, tss_instance)
+
             return titulos_antenas
 
         except Exception as e:
             print(f"❌ Error: {str(e)}")
             return {}
+
+    def _actualizar_sectores_con_tecnologias(self, wb_sid, tss_instance):
+        """Actualiza los sectores con sus tecnologías específicas cuando son diferentes"""
+        try:
+            print("\n=== BUSCANDO SECTORES PARA ACTUALIZAR ===")
+            sheet = wb_sid.sheets[self._obtener_hoja_indice('sid', 'antenas')]
+
+            print("🔍 Buscando sectores en la hoja...")
+
+            # Aquí iría el resto de la lógica para actualizar los sectores
+            # que ya tenías implementada en tu método original
+
+        except Exception as e:
+            print(f"❌ Error al actualizar sectores: {str(e)}")
 
     def verificar_posicion_imagenes(sheet, celda_objetivo):
         """Muestra información de posición de todas las imágenes en la hoja"""
@@ -1047,32 +1082,6 @@ class TSSBatchProcessor:
                 except Exception as e:
                     print(f"⚠️ Error en grupo {shape.name}: {str(e)}")
         return textboxes
-
-    def _actualizar_textbox_antena(self, textbox, titulo):
-        try:
-            texto = textbox.TextFrame2.TextRange.Text
-            if "TECH" in texto:
-                nuevo_texto = texto.replace("TECH", titulo)
-                textbox.TextFrame2.TextRange.Text = nuevo_texto
-                # Cambiar color del texto a RGB(9, 67, 183)
-                # textbox.TextFrame2.TextRange.Font.Fill.ForeColor.RGB = (9 << 16) | (67 << 8) | 183
-                return True
-            return False
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            return False
-
-    def _actualizar_codigo_antena(self, textbox, codigo):
-        try:
-            texto = textbox.TextFrame2.TextRange.Text
-            if "XXX" in texto:
-                nuevo_texto = texto.replace("XXX", codigo)
-                textbox.TextFrame2.TextRange.Text = nuevo_texto
-                return True
-            return False
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            return False
 
     def _imprimir_textboxes_actualizados(self, sheet):
         """Imprime el contenido de todos los TextBox tipo 17 en grupos"""

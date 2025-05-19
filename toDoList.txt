@@ -25,7 +25,9 @@
             if excel:
                 excel.Quit()
 
-Insertar el codigo,
-ponerlo de color azul las technologias,
-identificar tecnologias diferentes e insertarlos en el cuadro de texto
 
+identificar tecnologias diferentes e insertarlos en el cuadro de texto
+Ajustar las posiciones para que se inserten bien
+
+Insertar bien las imagenes en sus coordenadas correctas
+insertar los nombres de las tecnologias si son diferentes
