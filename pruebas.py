@@ -473,7 +473,7 @@ class TSSBatchProcessor:
             #     if elemento['tipo'] in ['imagen', 'rango'] and elemento['nombre'] in tss_instance.data['imagenes']:
             #         self._insertar_imagen(wb_sid,tss_instance, elemento)
 
-            # self._insertar_fotos_antenas(wb_sid, tss_instance)
+            self._insertar_fotos_antenas(wb_sid, tss_instance)
             self._actualizar_titulos_antenas(wb_sid, tss_instance)
             self._actualizar_sectores_con_tecnologias(wb_sid, tss_instance)
 
@@ -746,11 +746,11 @@ class TSSBatchProcessor:
             sheet = wb_sid.sheets[self._obtener_hoja_indice('sid', 'antenas')]
 
             # Configuración de imágenes
-            width = 10 * 28.35  # 10 cm a puntos
-            height = 15 * 28.35  # 15 cm a puntos
+            width = 9 * 28.35  # 10 cm a puntos
+            height = 14 * 28.35  # 15 cm a puntos
 
             posiciones_base = {
-                1: ("C14", "H14", "M14"),
+                1: ("B10", "G10", "L10"),
                 2: ("C64", "H64", "M64"),
                 3: ("C114", "H114", "M114"),
                 4: ("C164", "H164", "M164")
@@ -809,51 +809,228 @@ class TSSBatchProcessor:
             print(f"❌ Error: {str(e)}")
             return {}
 
-    def _actualizar_titulos_antenas(self, wb_sid, tss_instance):
-        """Método dedicado para actualizar títulos de antenas en TextBox"""
-        try:
-            print("\n=== ACTUALIZANDO TÍTULOS DE ANTENAS ===")
-            sheet = wb_sid.sheets[self._obtener_hoja_indice('sid', 'antenas')]
+    def verificar_posicion_imagenes(sheet, celda_objetivo):
+        """Muestra información de posición de todas las imágenes en la hoja"""
+        print(f"\n🔍 Verificando imágenes en hoja '{sheet.name}':")
 
-            # 1. Obtener todos los TextBox de antenas disponibles
-            textboxes_antenas = self._obtener_textboxes_antenas(sheet)
-            if not textboxes_antenas:
-                print("ℹ️ No se encontraron TextBox de antenas para actualizar")
-                return
+        for shape in sheet.shapes:
+            if shape.type == 'picture':
+                # Obtener posición y tamaño
+                top = shape.top
+                left = shape.left
+                height = shape.height
+                width = shape.width
 
-            # 2. Procesar cada carpeta de antena existente
-            for antena_num, textbox in textboxes_antenas.items():
-                antena_folder = os.path.join(tss_instance.resultados_dir, f"Antena_{antena_num}")
+                # Convertir posición a coordenadas de celda
+                row = int(top / sheet.range('A1').height) + 1
+                col = int(left / sheet.range('A1').width) + 1
+                letra_col = openpyxl.utils.get_column_letter(col)
 
-                if not os.path.exists(antena_folder):
-                    print(f"⏩ Saltando Antena {antena_num} - Carpeta no encontrada")
-                    continue
+                print(f"\n📸 Imagen: {shape.name}")
+                print(f"▸ Posición: {letra_col}{row}")
+                print(f"▸ Tamaño: {width:.2f}x{height:.2f} puntos")
+                print(f"▸ Celda objetivo: {celda_objetivo}")
 
-                # 3. Extraer tecnologías de los archivos PNG
-                tecnologias = set()
-                for sector in ['a', 'b', 'c']:
-                    patron = os.path.join(antena_folder, f"Antena_{antena_num}_Sector_{sector}*.png")
-
-                    for img_path in glob.glob(patron):
-                        if '(' in img_path and ')' in img_path:
-                            tech_part = img_path.split('(')[1].split(')')[0]
-                            tecnologias.update(t.strip() for t in tech_part.replace('-', ',').split(',') if t.strip())
-
-                # 4. Generar y actualizar título
-                if tecnologias:
-                    titulo = " + ".join(sorted(tecnologias))
-                    if self._actualizar_textbox_antena(textbox, titulo):
-                        print(f"✅ Antena {antena_num}: Actualizado título - {titulo}")
+                # Verificar si coincide con la celda objetivo
+                celda_actual = f"{letra_col}{row}"
+                if celda_actual == celda_objetivo:
+                    print("✅ Coincide con la posición esperada")
                 else:
-                    print(f"⚠️ Antena {antena_num}: No se encontraron tecnologías")
+                    print(f"⚠️ Desplazada! Diferencia: {abs(col - openpyxl.utils.column_index_from_string(celda_objetivo[0]))} columnas, "
+                          f"{abs(row - int(celda_objetivo[1:]))} filas")
+    def _actualizar_titulos_antenas(self, wb_sid, tss_instance):
+        """Actualiza los títulos de antenas en el SID con:
+        - Código de sitio (ID) en los TextBoxes con 'XXX'
+        - Tecnologías en los TextBoxes con 'TECH{num}'
 
-            # 5. Verificación: Mostrar todos los TextBox actualizados
-            print("\n=== VERIFICACIÓN DE TEXTOS ACTUALIZADOS ===")
-            self._imprimir_textboxes_actualizados(sheet)
+        Args:
+            wb_sid: Workbook de Excel (SID)
+            tss_instance: Instancia del TSS con los datos a actualizar
+        """
+        try:
+            print("\n" + "="*50)
+            print(" ACTUALIZANDO TÍTULOS DE ANTENAS ")
+            print("="*50)
+
+            # 1. Configuración inicial
+            sheet = self._obtener_hoja_antenas(wb_sid)
+            codigo_sitio = tss_instance.id.upper()
+
+            # 2. Procesar cada grupo de antenas
+            for grupo in self._obtener_grupos_antenas(sheet):
+                self._procesar_grupo_antenas(grupo, codigo_sitio, tss_instance)
+
+            print("\n" + "="*50)
+            print(" RESUMEN DE ACTUALIZACIONES ")
+            print("="*50)
+            self._imprimir_resumen_actualizaciones(sheet)
 
         except Exception as e:
-            print(f"❌ Error actualizando títulos: {str(e)}")
+            print(f"\n❌ ERROR CRÍTICO: {str(e)}")
+            traceback.print_exc()
 
+    def _obtener_hoja_antenas(self, wb_sid):
+        """Obtiene la hoja de antenas del SID"""
+        try:
+            indice = self._obtener_hoja_indice('sid', 'antenas')
+            return wb_sid.sheets[indice]
+        except Exception as e:
+            raise Exception(f"No se pudo obtener la hoja de antenas: {str(e)}")
+
+    def _obtener_grupos_antenas(self, sheet):
+        """Generador que devuelve cada grupo de antenas en la hoja"""
+        for shape in sheet.shapes:
+            if shape.type == 'group':
+                yield shape
+
+
+    def _procesar_grupo_antenas(self, grupo, codigo_sitio, tss_instance):
+        """Procesa un grupo de antenas identificando por TECH*N*"""
+        try:
+            # 1. Extraer número de antena del contenido TECH
+            num_antena = self._extraer_num_antena(grupo)
+            if num_antena is None:
+                return
+
+            # 2. Actualizar código en el TextBox con XXX
+            for item in grupo.api.GroupItems:
+                if item.Type == 17 and "XXX" in str(item.TextFrame2.TextRange.Text):
+                    item.TextFrame2.TextRange.Text = item.TextFrame2.TextRange.Text.replace("XXX", codigo_sitio)
+                    print(f"✓ Antena {num_antena}: Código actualizado")
+
+            # 3. Actualizar tecnologías en el TextBox TECH*N*
+            folder_antena = os.path.join(tss_instance.resultados_dir, f"Antena_{num_antena}")
+            if os.path.exists(folder_antena):
+                tecnologias = self._extraer_tecnologias(folder_antena)
+                if tecnologias:
+                    for item in grupo.api.GroupItems:
+                        if item.Type == 17 and f"TECH{num_antena}" in str(item.TextFrame2.TextRange.Text):
+                            self._actualizar_textbox_tecnologias(item, tecnologias)
+                            print(f"✓ Antena {num_antena}: Tecnologías actualizadas -> {', '.join(tecnologias)}")
+
+        except Exception as e:
+            print(f"⚠️ Error procesando grupo: {str(e)}")
+
+    def _extraer_tecnologias(self, folder_path):
+        """Extrae tecnologías de nombres de archivo"""
+        tecnologias = set()
+        for filename in os.listdir(folder_path):
+            if filename.endswith('.png') and '(' in filename:
+                tech_part = filename.split('(')[1].split(')')[0]
+                tecnologias.update(t.strip() for t in re.split(r'[, \-+]', tech_part) if t.strip())
+        return sorted(tecnologias)
+
+    def _actualizar_textbox_tecnologias(self, textbox, tecnologias):
+        """Formatea el TextBox de tecnologías"""
+        texto = " + ".join(tecnologias)
+        text_range = textbox.TextFrame2.TextRange
+        text_range.Text = texto
+        text_range.Font.Fill.ForeColor.RGB = (160 << 16) | (75 << 8) | 1  # RGB(1, 75, 160) → BGR(160, 75, 1)
+        text_range.Font.Bold = True
+    def _extraer_num_antena(self, grupo):
+        """Extrae el número de antena del TextBox TECH"""
+        for item in grupo.api.GroupItems:
+            if item.Type == 17 and "TECH" in str(item.TextFrame2.TextRange.Text):
+                try:
+                    return int(str(item.TextFrame2.TextRange.Text).replace("TECH", ""))
+                except:
+                    return None
+        return None
+    def _clasificar_componentes(self, grupo):
+        """Clasifica los TextBoxes del grupo en códigos y tecnologías"""
+        componentes = {
+            'codigos': [],
+            'tecnologias': []
+        }
+
+        for item in grupo.api.GroupItems:
+            if item.Type == 17:  # Es TextBox
+                texto = item.TextFrame2.TextRange.Text.strip()
+                print("Se pillo textbox "+item)
+                if "XXX" in texto:
+                    componentes['codigos'].append(item)
+                elif "TECH" in texto:
+                    componentes['tecnologias'].append(item)
+
+        return componentes
+
+    def _actualizar_codigos(self, textboxes, codigo):
+        """Actualiza todos los TextBoxes de código con el ID del sitio"""
+        for tb in textboxes:
+            try:
+                texto_original = tb.TextFrame2.TextRange.Text
+                nuevo_texto = texto_original.replace("XXX", codigo)
+                tb.TextFrame2.TextRange.Text = nuevo_texto
+                print(f"✓ Código actualizado en {tb.Name}")
+            except Exception as e:
+                print(f"⚠️ Error actualizando código en {tb.Name}: {str(e)}")
+
+    def _actualizar_tecnologias(self, textboxes, tss_instance):
+        """Actualiza los TextBoxes de tecnología con datos de las fotos"""
+        for tb in textboxes:
+            try:
+                # Extraer número de antena del nombre (ej: "TECH1" -> 1)
+                num_antena = int(re.search(r"TECH(\d+)", tb.Name).group(1))
+
+                # Obtener tecnologías de las fotos
+                folder_antena = os.path.join(tss_instance.resultados_dir, f"Antena_{num_antena}")
+                tecnologias = self._extraer_tecnologias(folder_antena)
+
+                if tecnologias:
+                    self._aplicar_formato_tecnologias(tb, tecnologias)
+                    print(f"✓ Tecnologías actualizadas en Antena {num_antena}: {', '.join(tecnologias)}")
+                else:
+                    print(f"⚠️ Antena {num_antena}: No se encontraron tecnologías")
+
+            except Exception as e:
+                print(f"⚠️ Error actualizando tecnologías en {tb.Name}: {str(e)}")
+
+    def _extraer_tecnologias(self, folder_path):
+        """Extrae tecnologías únicas de los nombres de archivo PNG"""
+        tecnologias = set()
+
+        if os.path.exists(folder_path):
+            for filename in os.listdir(folder_path):
+                if filename.endswith('.png') and '(' in filename:
+                    # Extraer texto entre paréntesis
+                    tech_str = filename.split('(')[1].split(')')[0]
+                    # Dividir por separadores comunes
+                    for tech in re.split(r'[,\-+]', tech_str):
+                        tech_limpia = tech.strip()
+                        if tech_limpia:
+                            tecnologias.add(tech_limpia)
+
+        return sorted(tecnologias)  # Orden alfabético
+
+    def _aplicar_formato_tecnologias(self, textbox, tecnologias):
+        """Aplica formato al TextBox de tecnologías"""
+        texto = " + ".join(tecnologias)
+        text_range = textbox.TextFrame2.TextRange
+        text_range.Text = texto
+
+        # Formato azul corporativo
+        # text_range.Font.Fill.ForeColor.RGB = 0x0170c0
+        # text_range.Font.Bold = True
+        # text_range.Font.Size = 10  # Tamaño consistente
+
+    def _imprimir_resumen_actualizaciones(self, sheet):
+        """Muestra resumen de cambios realizados"""
+        for shape in sheet.shapes:
+            if shape.type == 'group':
+                print(f"\nGrupo: {shape.name}")
+                for item in shape.api.GroupItems:
+                    if item.Type == 17:  # TextBox
+                        texto = item.TextFrame2.TextRange.Text.strip()
+                        print(f"  ├─ {item.Name}: {texto[:50]}...")
+    def _extraer_tecnologias_de_fotos(self, folder_path):
+        """Extrae tecnologías de los nombres de archivo en la carpeta de antena"""
+        tecnologias = set()
+        if os.path.exists(folder_path):
+            for filename in os.listdir(folder_path):
+                if filename.endswith('.png') and '(' in filename and ')' in filename:
+                    tech_part = filename.split('(')[1].split(')')[0]
+                    tecnologias.update(t.strip() for t in tech_part.replace('-', ',').split(',') if t.strip())
+        return tecnologias
     # Métodos auxiliares (ya existentes)
     def _obtener_textboxes_antenas(self, sheet):
         """Recopila TextBox de antenas en grupos (8.1, 8.2, etc.)"""
@@ -876,6 +1053,20 @@ class TSSBatchProcessor:
             texto = textbox.TextFrame2.TextRange.Text
             if "TECH" in texto:
                 nuevo_texto = texto.replace("TECH", titulo)
+                textbox.TextFrame2.TextRange.Text = nuevo_texto
+                # Cambiar color del texto a RGB(9, 67, 183)
+                # textbox.TextFrame2.TextRange.Font.Fill.ForeColor.RGB = (9 << 16) | (67 << 8) | 183
+                return True
+            return False
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return False
+
+    def _actualizar_codigo_antena(self, textbox, codigo):
+        try:
+            texto = textbox.TextFrame2.TextRange.Text
+            if "XXX" in texto:
+                nuevo_texto = texto.replace("XXX", codigo)
                 textbox.TextFrame2.TextRange.Text = nuevo_texto
                 return True
             return False

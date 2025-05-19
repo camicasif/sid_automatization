@@ -1,9 +1,3 @@
-Que algunos rangos sean opcionales, buscar si tienen fotos, si no tienen que sean opcionales
-llevar todas las fotos al fondo
-Hacer las diapositivas y pegarlas en la pagina 8
-_check CADA CAPTURA DEBERIA TENER SU PROPIO IDENTIFICADOR COMO ARCHIVO
-
-Para eso lo primero que se debe sacar es el nombre, despues lo demas
 
     def _procesar_rango(self, elemento):
         """Captura rangos usando Excel COM (requiere Excel instalado)"""
@@ -31,20 +25,7 @@ Para eso lo primero que se debe sacar es el nombre, despues lo demas
             if excel:
                 excel.Quit()
 
+Insertar el codigo,
+ponerlo de color azul las technologias,
+identificar tecnologias diferentes e insertarlos en el cuadro de texto
 
-
-
-
-
-Por hacer
-tengo 4 carpetas, Antena_1, Antena_2, Antena_3, Antena_4
-eliminar las que esten vacias
-
- recolectar los nombres de las tecnologias por carpeta
- cada antena puede tener mas de una tecnologia, separadas por guion "-" ejemplo WCDMA 850-LTE AWS ["WCDMA 850","LTE AWS"]
- recopilar todas las tecnologias de todas las antenas sin repetidos
- colocar todas estas tecnologias anidadas por un " + " menos el ultimo en un string llamado titulo
-
- imprimir el texto en consola por carpeta
-
-recolectar todos los grupos que hay en una lista
