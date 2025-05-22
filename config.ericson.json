@@ -1,0 +1,647 @@
+{
+  "elementos": [
+    {
+      "nombre": "id_sitio",
+      "tipo": "texto",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "H7"
+      },
+      "destino": {
+        "hoja": "portada",
+        "celdas": [
+          "A45"
+        ]
+      }
+    },
+    {
+      "nombre": "ubicacion_img",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "J55"
+      },
+      "destino": {
+        "hoja": "ubicacion_sitio",
+        "celdas": [
+          "E50"
+        ],
+        "ancho": 22,
+        "alto": 15
+      }
+    },
+    {
+      "nombre": "llaves",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "informacion",
+        "rango": "A84:AM98"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A292"
+        ]
+      }
+    },
+    {
+      "nombre": "observaciones_generales",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "informacion",
+        "rango": "A159:AM165"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A313"
+        ]
+      }
+    },
+    {
+      "nombre": "ingreso",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "informacion",
+        "rango": "B182:AJ219"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A336"
+        ],
+        "ancho": 24,
+        "alto": 19
+      }
+    },
+    {
+      "nombre": "torre",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "D297"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "J336"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "shelter_i1",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C126"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "H347"
+        ],
+        "ancho": 7,
+        "alto": 6
+      }
+    },
+    {
+      "nombre": "shelter_i2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I140"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "K355"
+        ],
+        "ancho": 7,
+        "alto": 6
+      }
+    },
+    {
+      "nombre": "shelter_o1",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C326"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "H347"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "shelter_o2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I340"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "K355"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "caja_reserva1",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "E255"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "O808"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "caja_reserva2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "N255"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "Q808"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "caja_reserva3",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "V255"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "S808"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "caja_reserva4",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "AF255"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "U808"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "espacio_caja_reserva1",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "E268"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G808"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "espacio_caja_reserva2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "N268"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "J808"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "espacio_caja_reserva3",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "W268"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G817"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "espacio_caja_reserva4",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "informacion",
+        "celda": "AG268"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "J817"
+        ],
+        "ancho": 8,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "cabina_cerrada",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C490"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A380"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "cabina_abierta",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I490"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "C380"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "equipos_existentes",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I516"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G380"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan_main",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C505"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A426"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan_abierto",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I505"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "C426"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan_DCDU",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "N505"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "B440"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "cabina_cerrada2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "C530"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A396"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "cabina_abierta2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I530"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "C396"
+        ],
+        "ancho": 7,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "equipos_existentes2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I556"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G396"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I544"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G426"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan_abierto2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "I505"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "J426"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "power_plan_DCDU2",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "cabinas",
+        "celda": "N505"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "I440"
+        ],
+        "ancho": 7,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "clamps",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "torres",
+        "rango": "E1894:V1899"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G855"
+        ],
+        "ancho": 14,
+        "alto": 5
+      }
+    },
+    {
+      "nombre": "escalerilla_vertical",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "torres",
+        "celda": "F1914"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "G864"
+        ],
+        "ancho": 6,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "plano_clamps",
+      "tipo": "imagen",
+      "origen": {
+        "hoja": "torres",
+        "celda": "M1914"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "J864"
+        ],
+        "ancho": 6,
+        "alto": 7
+      }
+    },
+    {
+      "nombre": "barra_tierra_indoor",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "puesta_tierra",
+        "rango": "A9:AJ29"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "B910"
+        ]
+      }
+    },
+    {
+      "nombre": "barra_tierra_outdoor",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "puesta_tierra",
+        "rango": "A44:AJ64"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "B901"
+        ]
+      }
+    },
+    {
+      "nombre": "barra_tierra_torre",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "puesta_tierra",
+        "rango": "A170:AJ196"
+      },
+      "destino": {
+        "hoja": "datos_generales",
+        "celdas": [
+          "A941"
+        ]
+      }
+    },
+    {
+      "nombre": "equipos_no_operativos_tabla",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "equipos",
+        "rango": "A8:P23"
+      },
+      "destino": {
+        "hoja": "equipos_no_operativos",
+        "celdas": [
+          "A4"
+        ],
+        "ancho": 12,
+        "alto": 8
+      }
+    },
+    {
+      "nombre": "equipos_no_operativos_especificacion",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "equipos",
+        "rango": "R22:AP24"
+      },
+      "destino": {
+        "hoja": "equipos_no_operativos",
+        "celdas": [
+          "G14"
+        ],
+        "ancho": 20,
+        "alto": 3
+      }
+    },
+    {
+      "nombre": "equipos_no_operativos_fotos",
+      "tipo": "rango",
+      "origen": {
+        "hoja": "equipos",
+        "rango": "B25:AG37"
+      },
+      "destino": {
+        "hoja": "equipos_no_operativos",
+        "celdas": [
+          "A22"
+        ],
+        "ancho": 20,
+        "alto": 8
+      }
+    }
+  ],
+  "hojas": {
+    "tss": {
+      "informacion": 0,
+      "energia": 1,
+      "cabinas": 2,
+      "equipos": 5,
+      "torres": 7,
+      "puesta_tierra": 8
+    },
+    "sid": {
+      "portada": 3,
+      "ubicacion_sitio": 4,
+      "datos_generales": 5,
+      "equipos_no_operativos": 6,
+      "antenas": 8
+    }
+  },
+  "nombre_sid": {
+    "plantilla": "SID MIC BO 3YPLAN 2024_ERICSON_NAME_ID.xlsx",
+    "formato": "SID MIC BO 3YPLAN 2024_{name}_{id}_RevP.xlsx",
+    "campos": {
+      "id": {
+        "hoja": "informacion",
+        "celda": "H7"
+      },
+      "name": {
+        "hoja": "informacion",
+        "celda": "H8"
+      }
+    }
+  }
+}

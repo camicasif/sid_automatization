@@ -47,7 +47,7 @@ def cerrar_dialogos_office():
 
 
 class TSSProcessor:
-    def __init__(self, config_path='config.json'):
+    def __init__(self, config_path='config.ericson.json'):
         self.config = self._cargar_configuracion(config_path)
         self.data = {'textos': {}, 'imagenes': {}}
         self.resultados_dir = None
@@ -425,7 +425,7 @@ class TSSProcessor:
 
 # Uso del sistema
 if __name__ == "__main__":
-    processor = TSSProcessor('config.json')
+    processor = TSSProcessor('config.ericson.json')
 
     start_time = time.time()
 

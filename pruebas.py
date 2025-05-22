@@ -59,7 +59,7 @@ def cerrar_dialogos_office():
 
 class TSSInstance:
     """Representa un archivo TSS individual con sus metadatos"""
-    def __init__(self, file_path,config_path='config.json'):
+    def __init__(self, file_path,config_path='config.ericson.json'):
 
         self.file_path = file_path
         self.name = "DEFAULT_NAME"
@@ -124,7 +124,7 @@ OFFSET_BUSQUEDA = 12
 class TSSBatchProcessor:
     """Procesa múltiples archivos TSS en lote"""
 
-    def __init__(self, config_path='config.json'):
+    def __init__(self, config_path='config.ericson.json'):
         self.config = _cargar_configuracion(config_path)
         self.tss_instances = []  # Lista de objetos TSSInstance
         self.total_time = 0
@@ -1152,7 +1152,7 @@ class TSSBatchProcessor:
             print(f"❌ Error general: {str(e)}")
 # Uso del sistema
 if __name__ == "__main__":
-    processor = TSSBatchProcessor('config.json')
+    processor = TSSBatchProcessor('config.ericson.json')
 
     # Procesar todos los TSS encontrados
     processor.procesar_lote("TSS")
