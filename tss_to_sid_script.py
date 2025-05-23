@@ -921,36 +921,57 @@ class TSSBatchProcessor:
             if shape.type == 'group':
                 yield shape
 
-
     def _procesar_grupo_antenas(self, grupo, codigo_sitio, tss_instance):
-        """Procesa un grupo de antenas identificando por TECH*N*"""
+        """Procesa un grupo de antenas modificando solo TECH{num}"""
         try:
-            print("Antes de Procesar grupo de antena " + codigo_sitio)
-
-            # 1. Extraer número de antena del contenido TECH
+            # 1. Extraer número de antena
             num_antena = self._extraer_num_antena(grupo)
             if num_antena is None:
+                print("✖ No se encontró número de antena")
                 return
-            print("Procesar grupo de antena " + codigo_sitio +" "+ num_antena)
 
-            # 2. Actualizar código en el TextBox con XXX
+            print(f"🔧 Procesando antena {num_antena}")
+
+            # 2. Buscar y modificar solo los TextBoxes relevantes
             for item in grupo.api.GroupItems:
-                if item.Type == 17 and "XXX" in str(item.TextFrame2.TextRange.Text):
-                    item.TextFrame2.TextRange.Text = item.TextFrame2.TextRange.Text.replace("XXX", codigo_sitio)
-                    print(f"✓ Antena {num_antena}: Código actualizado")
+                if item.Type == 17:  # Solo TextBoxes
+                    text_range = item.TextFrame2.TextRange
+                    original_text = text_range.Text
+                    modified = False
 
-            # 3. Actualizar tecnologías en el TextBox TECH*N*
-            folder_antena = os.path.join(tss_instance.resultados_dir, f"Antena_{num_antena}")
-            if os.path.exists(folder_antena):
-                tecnologias = self._extraer_tecnologias(folder_antena)
-                if tecnologias:
-                    for item in grupo.api.GroupItems:
-                        if item.Type == 17 and f"TECH{num_antena}" in str(item.TextFrame2.TextRange.Text):
-                            self._actualizar_textbox_tecnologias(item, tecnologias)
-                            print(f"✓ Antena {num_antena}: Tecnologías actualizadas -> {', '.join(tecnologias)}")
+                    # Reemplazar XXX por código de sitio (si existe)
+                    if "XXX" in original_text:
+                        new_text = original_text.replace("XXX", codigo_sitio)
+                        text_range.Text = new_text
+                        modified = True
+                        print(f"✓ Código actualizado en antena {num_antena}")
+
+                    # Buscar el patrón exacto TECH{num}
+                    tech_pattern = f"TECH{num_antena}"
+                    if tech_pattern in new_text:
+                        folder_antena = os.path.join(tss_instance.resultados_dir, f"Antena_{num_antena}")
+                        if os.path.exists(folder_antena):
+                            tecnologias = self._extraer_tecnologias(folder_antena)
+                            if tecnologias:
+                                # Reemplazo selectivo manteniendo saltos de línea
+                                tech_index = new_text.find(tech_pattern)
+                                before_tech = new_text[:tech_index]
+                                after_tech = new_text[tech_index + len(tech_pattern):]
+
+                                new_text = f"{before_tech}{' + '.join(tecnologias)}{after_tech}"
+
+                                # Aplicar formato
+                                text_range.Text = new_text
+                                text_range.Font.Fill.ForeColor.RGB = (160 << 16) | (75 << 8) | 1
+                                text_range.Font.Bold = True
+                                print(f"✓ Tecnologías actualizadas: {tech_pattern} → {' + '.join(tecnologias)}")
+
+                if not modified:
+                        print(f"ℹ️ TextBox sin cambios: {original_text[:30]}...")
 
         except Exception as e:
-            print(f"⚠️ Error procesando grupo: {str(e)}")
+            print(f"⚠️ Error crítico: {str(e)}")
+            raise  # Re-lanza la excepción para debugging
 
     def _extraer_tecnologias(self, folder_path):
         """Extrae tecnologías de nombres de archivo"""
