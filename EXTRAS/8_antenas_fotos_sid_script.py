@@ -200,7 +200,7 @@ def procesar_excels():
     lista_sectores = ['a', 'b', 'c']
     lista_antenas = [1, 2, 3, 4]
 
-    for excel_path in glob.glob(os.path.join("TSS", "*.xls*")):
+    for excel_path in glob.glob(os.path.join("../TSS", "*.xls*")):
         try:
             print(f"\nProcesando: {excel_path}")
 

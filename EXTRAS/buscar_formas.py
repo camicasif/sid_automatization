@@ -134,4 +134,4 @@ def analizar_grupos_formas(archivo_excel, hoja_num=10):
 
 # Ejemplo de uso
 if __name__ == "__main__":
-    analizar_grupos_formas("SID MIC BO 3YPLAN 2024_Name_ID_RevP.xlsx", hoja_num=10)
+    analizar_grupos_formas("../SID MIC BO 3YPLAN 2024_ERICSON_NAME_ID.xlsx", hoja_num=9)

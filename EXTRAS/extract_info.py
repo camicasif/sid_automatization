@@ -191,7 +191,7 @@ class TSSBatchProcessor:
         print(f"\n🔁 Procesando {tss_instance.name}_{tss_instance.id}")
 
         # 1. Configurar rutas
-        output_dir = os.path.join("resultados", f"{tss_instance.name}_{tss_instance.id}")
+        output_dir = os.path.join("../resultados", f"{tss_instance.name}_{tss_instance.id}")
         os.makedirs(output_dir, exist_ok=True)
 
         valores = {
@@ -205,7 +205,7 @@ class TSSBatchProcessor:
         os.makedirs(output_folder, exist_ok=True)
         output_path = os.path.join(output_folder, nombre_archivo)
 
-        tss_instance.resultados_dir = os.path.join("resultados", f"{tss_instance.name}_{tss_instance.id}")
+        tss_instance.resultados_dir = os.path.join("../resultados", f"{tss_instance.name}_{tss_instance.id}")
         os.makedirs(tss_instance.resultados_dir, exist_ok=True)
 
         # 2. Procesar contenido (adaptar tus métodos actuales)
@@ -595,7 +595,7 @@ class TSSBatchProcessor:
             print("\n=== PROCESANDO FOTOS DE ANTENAS ===")
 
             # Crear subcarpeta para este TSS si no existe
-            proyecto_folder = os.path.join("resultados", f"{tss_instance.name}_{tss_instance.id}")
+            proyecto_folder = os.path.join("../resultados", f"{tss_instance.name}_{tss_instance.id}")
             os.makedirs(proyecto_folder, exist_ok=True)
 
             # Configuración de sectores y antenas
@@ -1152,7 +1152,7 @@ class TSSBatchProcessor:
             print(f"❌ Error general: {str(e)}")
 # Uso del sistema
 if __name__ == "__main__":
-    processor = TSSBatchProcessor('config.ericson.json')
+    processor = TSSBatchProcessor('../config.ericson.json')
 
     # Procesar todos los TSS encontrados
     processor.procesar_lote("TSS")
